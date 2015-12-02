@@ -1,4 +1,9 @@
 var mosca = require('mosca');
+
+var id, start,stop,action,currentime, item, macid, type, group;
+//mqtt config
+var mqtt    = require('mqtt');
+var client  = mqtt.connect('mqtt://127.0.0.1',{encoding:'utf8', clientId: 'M-O-S-C-A'});
 //mysql configuation
 var mysql      = require('mysql');
 var connection = mysql.createConnection({
@@ -50,12 +55,12 @@ server.on('ready', setup);
 // fired when the mqtt server is ready 
 function setup() {
   console.log('Mosca server is up and running');
-  var id, start,stop,action,currentime, item, macid, type;
+ 
   
   //var currenttime=date.getTime()
   var tasks = "select * from tasks";
-  var minutes = 1, the_interval = 1000;
-  var group=null;
+  var minutes = 1, the_interval = 2000; //set time here
+  //var group=null;
 setInterval(function() {
   connection.query( tasks, function(err, rows){
     if(err) {
@@ -78,22 +83,30 @@ setInterval(function() {
           currenttime=date.getHours()*100+date.getMinutes(); 
           group=null;
           //if(macid==null)
-           // console.log('Null found');
-         if(item!=null)
+          //console.log('global group  is '+group+ '----'+i);
+          
+          
+          console.log(item);
+          /*if(item!=null)
             {
               //var groups='select id from groups where name='+item+'';
-              var check={name:item};
-              connection.query('Select id from groups where ?',check, function(err, grp){
+              //var check={name:item};
+              console.log('check--------'+item);
+              connection.query('Select id from groups where name=\''+item+'\'', function(err, grp){
+                
                 if(err) {
                   throw err;
                 }
                 else
                 {
-                  group=grp[0]['id'];
-                  //console.log("group id is "+group);
+                  group = grp[0]['id'];
+                  console.log("group id is "+group);
                 }
+                //console.log("now global group id is "+group+ '------'+i);
               });
-            }
+            }*/
+            
+          //  console.log("now global group id is "+group+ '------'+i);
           if(start!=null)
           {
 
@@ -102,11 +115,12 @@ setInterval(function() {
               
 
              // var devices = "select * from devices";
-              if(group!=null)
-                var groupid={group:group};
+              if(item!=null)
+                var devquery='Select macid from devices left join groups on devices.group=groups.id where groups.name=\"'+item+'\"';
               else
-                var groupid={macid:macid};
-              connection.query( 'select * from devices where ?',groupid, function(err, devs){
+                var devquery='Select macid from devices where devices.macid=\"'+macid+'\"';
+             
+              connection.query(devquery, function(err, devs){
                 if(err) {
                   throw err;
                 }
@@ -115,7 +129,8 @@ setInterval(function() {
                  // console.log(currenttime);
                   for (var j=0;j<devs.length;j++)//
                   {
-                    console.log("Switched on "+devs[j]['macid'])
+                    console.log("Switched on "+devs[j]['macid']);
+                    
                   }
                 }
               });
@@ -130,13 +145,13 @@ setInterval(function() {
 
 
               var upd2={action:1};
-              if(group!=null)
-                var query='UPDATE devices SET ? where devices.group='+group+'';
+              if(item!=null)
+                var query='UPDATE devices SET ? where devices.group in (Select * from (Select devices.group from devices where devices.group in (Select id from groups where groups.name=\"'+item+'\"))tmp)';
               else
                 var query='UPDATE devices SET ? where devices.macid='+macid+'';
               connection.query(query,upd2, function(err, rows, fields) { //insert into the table 
               if (err)
-                console.log(' Devices Update failed, error:  '+err);
+                console.log(' Devices Update failed, error2354:  '+err);
               else{
                 console.log('Devices Entry Updated, Set to 1');
                 console.log('Done executing the tasks');
@@ -155,8 +170,11 @@ setInterval(function() {
 
             if(currenttime>=stop && action==0)//to switch on the valves
             {
-              var devices = "select * from devices";
-              connection.query( devices, function(err, devs){
+              if(item!=null)
+                var devquery='Select macid from devices left join groups on devices.group=groups.id where groups.name=\"'+item+'\"';
+              else
+                var devquery='Select macid from devices where devices.macid=\"'+macid+'\"';
+              connection.query( devquery, function(err, devs){
                 if(err) {
                   throw err;
                 }
@@ -166,6 +184,10 @@ setInterval(function() {
                   for (var j=0;j<devs.length;j++)//
                   {
                     console.log("Switched off "+devs[j]['macid'])
+                    client.on('connect', function () {
+                      client.publish('esp/\''+devs[j]['macid']+'\'',0, {retain:false, qos: 1});
+                      client.end();
+                    });
                   }
                 }
               });
@@ -173,11 +195,11 @@ setInterval(function() {
               {
                 console.log("you are in the deletion zone");
                 connection.query('Delete from tasks where id='+id+'', function(err, rows, fields) { //insert into the table 
-              if (err)
-                console.log('Manual task deletion failed');
-              else
-                console.log('Manual task entry deleted');
-              });
+                  if (err)
+                    console.log('Manual task deletion failed');
+                  else
+                    console.log('Manual task entry deleted');
+                  });
               }
               else
               {
@@ -190,8 +212,8 @@ setInterval(function() {
                 });
               }
               var upd2={action:0};
-              if(group!=null)
-                var query='UPDATE devices SET ? where devices.group=\''+group+'\''; //if group is scheduled
+              if(global.group!=null)
+                var query='UPDATE devices SET ? where devices.group=\''+global.group+'\''; //if group is scheduled
               else
                 var query='UPDATE devices SET ? where devices.macid=\''+macid+'\''; // if individual valve is scheduled
               console.log(macid);
