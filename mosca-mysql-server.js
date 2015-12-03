@@ -3,9 +3,10 @@ var mosca = require('mosca');
 var id, start,stop,action,currentime, item, macid, type, group;
 //mqtt config
 var mqtt    = require('mqtt');
-var client  = mqtt.connect('mqtt://127.0.0.1',{encoding:'utf8', clientId: 'M-O-S-C-A'});
-//mysql configuation
+
+//mysql configuration
 var mysql      = require('mysql');
+/////////////////////////////////
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
@@ -47,7 +48,8 @@ server.on('clientConnected', function(client) {
  
 // fired when a message is received 
 server.on('published', function(packet, client) {
-  console.log('Published payload', packet.payload);
+  console.log('Published topic', packet.topic);
+  console.log('Published payload', packet);
 });
  
 server.on('ready', setup);
@@ -86,7 +88,7 @@ setInterval(function() {
           //console.log('global group  is '+group+ '----'+i);
           
           
-          console.log(item);
+          //console.log(item);
           /*if(item!=null)
             {
               //var groups='select id from groups where name='+item+'';
@@ -127,11 +129,16 @@ setInterval(function() {
                 else
                 {
                  // console.log(currenttime);
+                  var mqttclient  = mqtt.connect('mqtt://127.0.0.1',{encoding:'utf8', clientId: 'M-O-S-C-A'});
                   for (var j=0;j<devs.length;j++)//
                   {
-                    console.log("Switched on "+devs[j]['macid']);
-                    
+                      
+                      console.log("Switched on "+devs[j].macid)
+                      //console.log('outside console mqtt '+devs[j].macid);
+                      mqttclient.publish('esp/'+devs[j].macid,'1', {retain:false, qos: 1});
                   }
+                  mqttclient.end();
+
                 }
               });
               
@@ -151,7 +158,7 @@ setInterval(function() {
                 var query='UPDATE devices SET ? where devices.macid='+macid+'';
               connection.query(query,upd2, function(err, rows, fields) { //insert into the table 
               if (err)
-                console.log(' Devices Update failed, error2354:  '+err);
+                console.log(' Devices Update failed, error:  '+err);
               else{
                 console.log('Devices Entry Updated, Set to 1');
                 console.log('Done executing the tasks');
@@ -181,19 +188,19 @@ setInterval(function() {
                 else
                 {
                  // console.log(currenttime);
-                  for (var j=0;j<devs.length;j++)//
+                 var mqttclient  = mqtt.connect('mqtt://127.0.0.1',{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                 for (var j=0;j<devs.length;j++)// publishing the message
                   {
-                    console.log("Switched off "+devs[j]['macid'])
-                    client.on('connect', function () {
-                      client.publish('esp/\''+devs[j]['macid']+'\'',0, {retain:false, qos: 1});
-                      client.end();
-                    });
+                      console.log("Switched off "+devs[j].macid)
+                      //console.log('outside console mqtt '+devs[j].macid);
+                      mqttclient.publish('esp/'+devs[j].macid,'0', {retain:false, qos: 1});
                   }
+                  mqttclient.end();
                 }
               });
               if(type==0)
               {
-                console.log("you are in the deletion zone");
+                console.log("You are in the deletion zone");
                 connection.query('Delete from tasks where id='+id+'', function(err, rows, fields) { //insert into the table 
                   if (err)
                     console.log('Manual task deletion failed');
@@ -212,8 +219,8 @@ setInterval(function() {
                 });
               }
               var upd2={action:0};
-              if(global.group!=null)
-                var query='UPDATE devices SET ? where devices.group=\''+global.group+'\''; //if group is scheduled
+              if(item!=null)
+                var query='UPDATE devices SET ? where devices.group in (Select * from (Select devices.group from devices where devices.group in (Select id from groups where groups.name=\"'+item+'\"))tmp)';//group valves are selected
               else
                 var query='UPDATE devices SET ? where devices.macid=\''+macid+'\''; // if individual valve is scheduled
               console.log(macid);
@@ -241,3 +248,4 @@ setInterval(function() {
   // do your stuff here
 }, the_interval);
 }
+

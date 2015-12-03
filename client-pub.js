@@ -1,7 +1,8 @@
 var mqtt    = require('mqtt');
-var client  = mqtt.connect('mqtt://10.129.28.152',{encoding:'utf8', clientId: '1348-FE-34-AA-A1-E31'});
+var pub  = mqtt.connect('mqtt://127.0.0.1',{encoding:'utf8', clientId: 'Publishers'});
  
-client.on('connect', function () {
-  client.publish('esp/battery', '18-FE-34-AA-A1-E31', {retain:false, qos: 1});
-client.end();
-});
+//pub.on();
+pub.publish('esp/12-31-13-AA-FD-43', '1', {retain:false, qos: 1});
+pub.end();
+
+//console.log(jay);
