@@ -1,8 +1,9 @@
 var mosca = require('mosca');
 
-var id, start,stop,action,currentime, item, macid, type, group;
+var id, start,stop,action,currentime, item, macid, type;
 //mqtt config
 var mqtt    = require('mqtt');
+var mqttaddress='mqtt://127.0.0.1';
 
 //mysql configuration
 var mysql      = require('mysql');
@@ -25,24 +26,34 @@ var settings = {
 var server = new mosca.Server(settings);
 
 server.on('clientConnected', function(client) {
-   /* var val=client.id;
-    var post  = {state_name: val};
-    connection.query('SELECT EXISTS(SELECT * FROM states WHERE ?) as find',post, function(err, rows, fields) {
+    var val=client.id;
+    var post  = {macid: val};
+    connection.query('SELECT EXISTS(SELECT * FROM devices WHERE ?) as find',post, function(err, rows, fields) {
     
       if (err) throw err;
-        var find=rows[0]['find'];
-        if(find==0){ //check device is the new one
-          connection.query('INSERT INTO states SET?',post, function(err, rows, fields) { //insert into the table 
-          if (err) throw err
-            console.log('New Device found');
-        });
-        }
-        else{
-          console.log('Old device');
-        }
+      else{
+          var find=rows[0]['find'];
+          if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
+            var devdis='INSERT INTO devices VALUES (DEFAULT,NULL,\''+post.macid+'\',NULL,2,1, DEFAULT,NULL,NULL)'
+            connection.query(devdis, function(err, rows, fields) { //insert into the table 
+              if (err) throw err;
+              else
+                console.log('New Device found, adding '+post.macid+' into device table');
+              });
+          }
         
-      
-    });*/
+          else{
+            console.log('Old device');
+            var devdis='UPDATE devices SET status=1 where macid=\''+post.macid+'\'';
+            connection.query(devdis, function(err, rows, fields) { //updating device status as online  
+              if (err) throw err;
+              else
+                console.log('Device '+post.macid+' is online');
+          
+            });
+          }
+        }
+    });
     console.log('client connected', client.id);
 });
  
@@ -83,7 +94,7 @@ setInterval(function() {
           type=rows[i]['type'];
           var date=new Date();
           currenttime=date.getHours()*100+date.getMinutes(); 
-          group=null;
+         //group=null;
           //if(macid==null)
           //console.log('global group  is '+group+ '----'+i);
           
@@ -129,13 +140,12 @@ setInterval(function() {
                 else
                 {
                  // console.log(currenttime);
-                  var mqttclient  = mqtt.connect('mqtt://127.0.0.1',{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                  var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
                   for (var j=0;j<devs.length;j++)//
                   {
                       
                       console.log("Switched on "+devs[j].macid)
-                      //console.log('outside console mqtt '+devs[j].macid);
-                      mqttclient.publish('esp/'+devs[j].macid,'1', {retain:false, qos: 1});
+                      mqttpub(mqttclient,devs[j].macid,1);
                   }
                   mqttclient.end();
 
@@ -143,7 +153,7 @@ setInterval(function() {
               });
               
                 var upd1={action:0};
-                connection.query('UPDATE tasks SET ? where id='+id+'',upd1, function(err, rows, fields) { //insert into the table 
+                connection.query('UPDATE tasks SET ? where id='+id+'',upd1, function(err, rows, fields) { //update into the table 
                 if (err)
                   console.log('Update failed');
                 else
@@ -156,7 +166,7 @@ setInterval(function() {
                 var query='UPDATE devices SET ? where devices.group in (Select * from (Select devices.group from devices where devices.group in (Select id from groups where groups.name=\"'+item+'\"))tmp)';
               else
                 var query='UPDATE devices SET ? where devices.macid='+macid+'';
-              connection.query(query,upd2, function(err, rows, fields) { //insert into the table 
+              connection.query(query,upd2, function(err, rows, fields) { //update the table 
               if (err)
                 console.log(' Devices Update failed, error:  '+err);
               else{
@@ -188,12 +198,11 @@ setInterval(function() {
                 else
                 {
                  // console.log(currenttime);
-                 var mqttclient  = mqtt.connect('mqtt://127.0.0.1',{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                 var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
                  for (var j=0;j<devs.length;j++)// publishing the message
                   {
                       console.log("Switched off "+devs[j].macid)
-                      //console.log('outside console mqtt '+devs[j].macid);
-                      mqttclient.publish('esp/'+devs[j].macid,'0', {retain:false, qos: 1});
+                      mqttpub(mqttclient,devs[j].macid,0);
                   }
                   mqttclient.end();
                 }
@@ -201,7 +210,7 @@ setInterval(function() {
               if(type==0)
               {
                 console.log("You are in the deletion zone");
-                connection.query('Delete from tasks where id='+id+'', function(err, rows, fields) { //insert into the table 
+                connection.query('Delete from tasks where id='+id+'', function(err, rows, fields) { //delete from the table 
                   if (err)
                     console.log('Manual task deletion failed');
                   else
@@ -211,7 +220,7 @@ setInterval(function() {
               else
               {
                 var upd1={action:1};
-                connection.query('UPDATE tasks SET ? where id='+id+'',upd1, function(err, rows, fields) { //insert into the table 
+                connection.query('UPDATE tasks SET ? where id='+id+'',upd1, function(err, rows, fields) { //update the table 
                 if (err)
                   console.log('Update failed');
                 else
@@ -224,7 +233,7 @@ setInterval(function() {
               else
                 var query='UPDATE devices SET ? where devices.macid=\''+macid+'\''; // if individual valve is scheduled
               console.log(macid);
-              connection.query(query,upd2, function(err, rows, fields) { //insert into the table 
+              connection.query(query,upd2, function(err, rows, fields) { //update the table 
               if (err)
                 console.log('Update failed, error: '+err);
               else{
@@ -248,4 +257,7 @@ setInterval(function() {
   // do your stuff here
 }, the_interval);
 }
-
+function mqttpub(mqttclient,macid,action)//method for publishing the message to esp module
+{
+   mqttclient.publish('esp/'+macid, action.toString(), {retain:false, qos: 1});
+}
