@@ -44,9 +44,9 @@ server.on('clientConnected', function(client) {
             }
           
             else{
-              console.log('Old device');
+              console.log('Device '+post.macid+' reconnected');
               var devdis='UPDATE devices SET status=1 where macid=\''+post.macid+'\'';
-              connection.query(devdis, function(err, rows, fields) { //updating device status as online  
+              connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
                 if (err) throw err;
                 else
                   console.log('Device '+post.macid+' is online');
@@ -59,15 +59,29 @@ server.on('clientConnected', function(client) {
     console.log('client connected', client.id);
 });
 
+server.on('unsubscribed', function(topic, client) { //checking if the device goes offline
+    var val=client.id;
+    
+    console.log('client unsubscribed', client.id);
+    var offlineq='UPDATE devices SET status=0 where macid= \''+client.id.toString()+'\'';
+    connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
+      if (err) throw err;
+      else
+        console.log('Device '+client.id.toString()+' went offline');
+  
+    });
+
+});
+
  
 // fired when a message is received 
 server.on('published', function(packet, client) {
   var msg=packet.payload; //get value of payload
   msg=msg.toString();
-  console.log('Published topic', packet.topic);
+  console.log('Published topic'+packet.topic);
   console.log('Published payload '+msg);
   console.log('Macid is '+msg.length);
-  if(msg.length>17){
+  if(msg.length>17 && msg.length<24){ //this could be improved
     var batmacid=msg.substring(0,17);
     var batvoltage=msg.substring(17,msg.length);
     var batmac  = {macid: batmacid};
@@ -326,7 +340,5 @@ function battstatus()
       }
       mqttclient.end();
     }
-
-
-  });
+});
 }
