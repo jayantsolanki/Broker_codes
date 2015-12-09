@@ -22,7 +22,27 @@ var settings = {
   port: 1883,
   host: "127.0.0.1"
 };
- 
+
+///////////////
+// Accepts the connection if the username and password are valid
+var authenticate = function(client, username, password, callback) {
+  var authorized = (username === 'admin' && password.toString() === 'password');
+  if (authorized) client.user = username;
+  callback(null, authorized);
+}
+
+// In this case the client authorized as alice can publish to /users/alice taking
+// the username from the topic and verifing it is the same of the authorized user
+var authorizePublish = function(client, topic, payload, callback) {
+  callback(null, client.user == topic.split('/')[1]);
+}
+
+// In this case the client authorized as alice can subscribe to /users/alice taking
+// the username from the topic and verifing it is the same of the authorized user
+var authorizeSubscribe = function(client, topic, callback) {
+  callback(null, client.user == topic.split('/')[1]);
+}
+////////////// 
 var server = new mosca.Server(settings);
 //device discovery
 server.on('clientConnected', function(client) {
@@ -75,9 +95,10 @@ server.on('unsubscribed', function(topic, client) { //checking if the device goe
 
  
 // fired when a message is received 
-server.on('published', function(packet, client) {
+server.on('published', function(packet) {
   var msg=packet.payload; //get value of payload
   msg=msg.toString();
+  console.log('Client id is ',packet);
   console.log('Published topic'+packet.topic);
   console.log('Published payload '+msg);
   console.log('Macid is '+msg.length);
@@ -122,6 +143,9 @@ server.on('ready', setup);
  
 // fired when the mqtt server is ready 
 function setup() {
+  server.authenticate = authenticate;
+  server.authorizePublish = authorizePublish;
+  server.authorizeSubscribe = authorizeSubscribe;
   console.log('Mosca server is up and running');
   //var currenttime=date.getTime()
   var tasks = "select * from tasks";
@@ -148,7 +172,7 @@ function setup() {
             currenttime=date.getHours()*100+date.getMinutes();
             if(currenttime==0000)
               flag=1; 
-            if(currenttime==1453 || currenttime==0400)//check battery status at every 4 AM
+            if(currenttime==400 || currenttime==0400)//check battery status at every 4 AM
             {
               
               if(flag==1){
@@ -324,7 +348,7 @@ function mqttpub(mqttclient,macid,action)//method for publishing the message to 
    mqttclient.publish('esp/'+macid, action.toString(), {retain:false, qos: 1});
 }
 
-//battery status check
+// battery status check
 function battstatus()
 {
   var query='Select macid from devices';
