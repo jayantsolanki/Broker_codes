@@ -1,10 +1,9 @@
-var mqtt    = require('mqtt');
-var client  = mqtt.connect('mqtt://0.0.0.0:61620',{encoding:'utf8', clientId: 'Listener2'});
- 
-
-  client.subscribe('esp/12-31-13-AA-FD-43');
- 
-client.on('message', function (topic, message) {
-  console.log(message.toString());
-//client.end();
-  });
+var mqtt = require('mqtt');
+var client = mqtt.connect('mqtt://0.0.0.0:1880',{encoding:'utf8', clientId: 'subscriber'});
+client.on('connect', function(){
+    client.subscribe('#',{qos:0});
+   
+});
+client.on('message', function(topic, msg, client){
+    console.log('Received Message:', topic, msg);
+});

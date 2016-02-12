@@ -3,7 +3,7 @@ var mosca = require('mosca');
 var id, start,stop,action,currentime, item, macid, type, flag=1;
 //mqtt config
 var mqtt    = require('mqtt');
-var mqttaddress='mqtt://127.0.0.1';
+var mqttaddress='mqtt://10.129.28.181';
 
 //mysql configuration
 var mysql      = require('mysql');
@@ -20,7 +20,7 @@ connection.connect();
  
 var settings = {
   port: 1883,
-  host: "127.0.0.1"
+  host: "10.129.28.181"
 };
 
 ///////////////
@@ -31,13 +31,13 @@ var authenticate = function(client, username, password, callback) {
   callback(null, authorized);
 }
 
-// In this case the client authorized as alice can publish to /users/alice taking
+// In this case the client authorized as admin can publish to /users/alice taking
 // the username from the topic and verifing it is the same of the authorized user
 var authorizePublish = function(client, topic, payload, callback) {
   callback(null, client.user == topic.split('/')[1]);
 }
 
-// In this case the client authorized as alice can subscribe to /users/alice taking
+// In this case the client authorized as admin can subscribe to /users/alice taking
 // the username from the topic and verifing it is the same of the authorized user
 var authorizeSubscribe = function(client, topic, callback) {
   callback(null, client.user == topic.split('/')[1]);
@@ -55,12 +55,15 @@ server.on('clientConnected', function(client) {
         else{
             var find=rows[0]['find'];
             if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
-              var devdis='INSERT INTO devices VALUES (DEFAULT,NULL,\''+post.macid+'\',NULL,2,1, DEFAULT,NULL,NULL)'
-              connection.query(devdis, function(err, rows, fields) { //insert into the table 
-                if (err) throw err;
-                else
-                  console.log('New Device found, adding '+post.macid+' into device table');
-                });
+              if(post.macid==17)
+              {
+                var devdis='INSERT INTO devices VALUES (DEFAULT,NULL,\''+post.macid+'\',NULL,2,1, DEFAULT,NULL,NULL)'
+                connection.query(devdis, function(err, rows, fields) { //insert into the table 
+                  if (err) throw err;
+                  else
+                    console.log('New Device found, adding '+post.macid+' into device table');
+                  });
+              }
             }
           
             else{
@@ -111,7 +114,7 @@ server.on('published', function(packet) {
       else{
           var findmac=rows[0]['find'];
           if(findmac==0){ //check device is the new one, findmac=0 means new entry found, no previous entry in the battery status table
-            var batquery='INSERT INTO battstatus VALUES (DEFAULT,\''+batmacid+'\','+batvoltage+', DEFAULT)'
+            var batquery='INSERT INTO battstatus VALUES (DEFAULT,\''+0+'\','+0+', DEFAULT)'
             connection.query(batquery, function(err, rows, fields) { //insert into the table 
               if (err) throw err;
               else
@@ -121,7 +124,7 @@ server.on('published', function(packet) {
         
           else{
             console.log('Updating battery status for device '+batmacid);
-            var batquery='UPDATE battstatus SET voltage='+batvoltage+' where macid=\''+batmacid+'\'';
+            var batquery='UPDATE battstatus SET voltage='+batvoltage+' where macid=\''+0+'\'';
             connection.query(batquery, function(err, rows, fields) { //updating device status as online  
               if (err) throw err;
               else
@@ -143,9 +146,9 @@ server.on('ready', setup);
  
 // fired when the mqtt server is ready 
 function setup() {
-  server.authenticate = authenticate;
-  server.authorizePublish = authorizePublish;
-  server.authorizeSubscribe = authorizeSubscribe;
+ // server.authenticate = authenticate;
+ // server.authorizePublish = authorizePublish;
+ // server.authorizeSubscribe = authorizeSubscribe;
   console.log('Mosca server is up and running');
   //var currenttime=date.getTime()
   var tasks = "select * from tasks";
