@@ -1,5 +1,10 @@
 var mosca = require('mosca');
-
+/////serial config
+var SerialPort = require("serialport").SerialPort
+var serialPort = new SerialPort("/dev/pts/8", {
+  baudrate: 9600
+});
+/////////////////
 var id, start,stop,action,currentime, item, macid, type, flag=1;
 //mqtt config
 var mqtt    = require('mqtt');
@@ -19,7 +24,7 @@ connection.connect();
 //configuration ended
  
 var settings = {
-  port: 1883,
+  port: 1880,
   host: "10.129.28.181"
 };
 
@@ -31,7 +36,7 @@ var authenticate = function(client, username, password, callback) {
   callback(null, authorized);
 }
 
-// In this case the client authorized as admin can publish to /users/alice taking
+// In this case the client authorized as admin can publish to topic taking
 // the username from the topic and verifing it is the same of the authorized user
 var authorizePublish = function(client, topic, payload, callback) {
   callback(null, client.user == topic.split('/')[1]);
@@ -50,12 +55,16 @@ server.on('clientConnected', function(client) {
     if(val!='M-O-S-C-A'){ //do not enter client id of server
       var post  = {macid: val};
       connection.query('SELECT EXISTS(SELECT * FROM devices WHERE ?) as find',post, function(err, rows, fields) {
+      //console.log('Inside client connected '+val);
       
         if (err) throw err;
         else{
             var find=rows[0]['find'];
+            console.log('Inside client connected '+find);
+            var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
+            console.log('Mac id is valid? '+regex.test(post.macid));
             if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
-              if(post.macid==17)
+              if(regex.test(post.macid))//check if the client id is the macid
               {
                 var devdis='INSERT INTO devices VALUES (DEFAULT,NULL,\''+post.macid+'\',NULL,2,1, DEFAULT,NULL,NULL)'
                 connection.query(devdis, function(err, rows, fields) { //insert into the table 
@@ -79,7 +88,7 @@ server.on('clientConnected', function(client) {
           }
       });
     }
-    console.log('client connected', client.id);
+    //console.log('client connected', client.id);
 });
 
 server.on('unsubscribed', function(topic, client) { //checking if the device goes offline
@@ -107,34 +116,39 @@ server.on('published', function(packet) {
   console.log('Macid is '+msg.length);
   if(msg.length>17 && msg.length<24){ //this could be improved
     var batmacid=msg.substring(0,17);
-    var batvoltage=msg.substring(17,msg.length);
-    var batmac  = {macid: batmacid};
-    connection.query('SELECT EXISTS(SELECT * FROM battstatus WHERE ?) as find',batmac, function(err, rows, fields) {
-      if (err) throw err;
-      else{
-          var findmac=rows[0]['find'];
-          if(findmac==0){ //check device is the new one, findmac=0 means new entry found, no previous entry in the battery status table
-            var batquery='INSERT INTO battstatus VALUES (DEFAULT,\''+0+'\','+0+', DEFAULT)'
-            connection.query(batquery, function(err, rows, fields) { //insert into the table 
-              if (err) throw err;
-              else
-                console.log('Battery status inserted for device '+batmacid+' with voltage '+batvoltage);
-            });
-          }
-        
-          else{
-            console.log('Updating battery status for device '+batmacid);
-            var batquery='UPDATE battstatus SET voltage='+batvoltage+' where macid=\''+0+'\'';
-            connection.query(batquery, function(err, rows, fields) { //updating device status as online  
-              if (err) throw err;
-              else
-                console.log('Device '+batmacid+' has voltage of '+batvoltage);
-          
-            });
-          }
-        }
+    var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
+    if(regex.test(batmacid)){ //check if valid macid there
 
-    });
+      var batvoltage=msg.substring(17,msg.length);
+      var batmac  = {macid: batmacid};
+      connection.query('SELECT EXISTS(SELECT * FROM battstatus WHERE ?) as find',batmac, function(err, rows, fields) {
+        if (err) throw err;
+        else{
+            var findmac=rows[0]['find'];
+            if(findmac==0){ //check device is the new one, findmac=0 means new entry found, no previous entry in the battery status table
+              var batquery='INSERT INTO battstatus VALUES (DEFAULT,\''+0+'\','+0+', DEFAULT)'
+              connection.query(batquery, function(err, rows, fields) { //insert into the table 
+                if (err) throw err;
+                else
+                  console.log('Battery status inserted for device '+batmacid+' with voltage '+batvoltage);
+              });
+            }
+          
+            else{
+              console.log('Updating battery status for device '+batmacid);
+              var batquery='UPDATE battstatus SET voltage='+batvoltage+' where macid=\''+0+'\'';
+              connection.query(batquery, function(err, rows, fields) { //updating device status as online  
+                if (err) throw err;
+                else
+                  console.log('Device '+batmacid+' has voltage of '+batvoltage);
+            
+              });
+            }
+          }
+
+      });
+    }
+    
   
   }
 
@@ -338,8 +352,8 @@ function setup() {
           }//end of main loop
           
         }
-        else
-          console.log('Scheduled tasks list empty');
+        //else
+          //console.log('Scheduled tasks list empty');
 
       }
     });
@@ -369,3 +383,17 @@ function battstatus()
     }
 });
 }
+//serial listen
+serialPort.on("open", function () {
+  console.log('open');
+  var count=0
+  serialPort.on('data', function(data) {
+    console.log('data received: ' + data);
+    count++;
+    console.log('data count : ' + count);
+  });
+  serialPort.on('error', function(errors) {
+    console.log('error in reading: ' + errors);
+  });
+});
+/////
