@@ -34,9 +34,8 @@ connection.connect();
 //configuration ended
  
 var settings = {
-<<<<<<< HEAD
-  port: 1880,
-  host: "10.129.28.181",
+  port: 1883,
+  host: "10.129.28.118",
   backend: ascoltatore,
   persistence: {
     factory: mosca.persistence.Mongo,
@@ -434,7 +433,7 @@ function battstatus()
   serialPort.on('error', function(errors) {
     console.log('error in reading: ' + errors);
   });
-<<<<<<< HEAD
+
 });*/
 /////
 
