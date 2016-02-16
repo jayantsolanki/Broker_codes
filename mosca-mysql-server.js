@@ -105,6 +105,21 @@ server.on('unsubscribed', function(topic, client) { //checking if the device goe
 
 });
 
+//
+server.on('clientDisconnected', function( client) { //checking if the device goes disconnect
+    var val=client.id;
+
+    console.log('client disconnected', client.id);
+    var offlineq='UPDATE devices SET status=0 where macid= \''+client.id.toString()+'\'';
+    connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
+      if (err) throw err;
+      else
+        console.log('Device '+client.id.toString()+' disconnected');
+
+    });
+
+});
+//
  
 // fired when a message is received 
 server.on('published', function(packet) {
