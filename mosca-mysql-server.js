@@ -8,7 +8,7 @@ var serialPort = new SerialPort("/dev/pts/8", {
 var id, start,stop,action,currentime, item, macid, type, flag=1;
 //mqtt config
 var mqtt    = require('mqtt');
-var mqttaddress='mqtt://10.129.28.181';
+var mqttaddress='mqtt://10.129.28.118';
 
 //mysql configuration
 var mysql      = require('mysql');
@@ -26,7 +26,7 @@ var ascoltatore = {
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
-  password : 'jayant123',
+  password : 'kygh012xt',
   database : 'IOT'
 });
 
@@ -34,6 +34,7 @@ connection.connect();
 //configuration ended
  
 var settings = {
+<<<<<<< HEAD
   port: 1880,
   host: "10.129.28.181",
   backend: ascoltatore,
@@ -204,7 +205,7 @@ function setup() {
             currenttime=date.getHours()*100+date.getMinutes();
             if(currenttime==0000)
               flag=1; 
-            if(currenttime==2237 || currenttime==2237)//check battery status at every 4 AM
+            if(currenttime==0400 || currenttime==400)//check battery status at every 4 AM
             {
               
               if(flag==1){
@@ -375,9 +376,10 @@ function setup() {
   // do your stuff here
 }, the_interval);
 }
+//////////////
 function mqttpub(mqttclient,macid,action)//method for publishing the message to esp module
 {
-   mqttclient.publish('esp/'+macid, action.toString(), {retain:false, qos: 1});
+   mqttclient.publish('esp/'+macid, action.toString(), {retain:true, qos: 1});
 }
 
 // battery status check
@@ -417,5 +419,7 @@ function battstatus()
   serialPort.on('error', function(errors) {
     console.log('error in reading: ' + errors);
   });
+<<<<<<< HEAD
 });*/
 /////
+
