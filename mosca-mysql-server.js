@@ -1,9 +1,9 @@
 var mosca = require('mosca');
 /////serial config
-var SerialPort = require("serialport").SerialPort
+/*var SerialPort = require("serialport").SerialPort
 var serialPort = new SerialPort("/dev/pts/8", {
   baudrate: 9600
-});
+});*/
 /////////////////
 var id, start,stop,action,currentime, item, macid, type, flag=1;
 //mqtt config
@@ -13,6 +13,16 @@ var mqttaddress='mqtt://10.129.28.181';
 //mysql configuration
 var mysql      = require('mysql');
 /////////////////////////////////
+///mongo config
+var ascoltatore = {
+  //using ascoltatore
+  type: 'mongo',        
+  url: 'mongodb://localhost:27017/mqtt',
+  pubsubCollection: 'ascoltatori',
+  mongo: {}
+};
+
+///
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
@@ -25,7 +35,12 @@ connection.connect();
  
 var settings = {
   port: 1880,
-  host: "10.129.28.181"
+  host: "10.129.28.181",
+  backend: ascoltatore,
+  persistence: {
+    factory: mosca.persistence.Mongo,
+    url: 'mongodb://localhost:27017/mqtt'
+  }
 };
 
 ///////////////
@@ -189,7 +204,7 @@ function setup() {
             currenttime=date.getHours()*100+date.getMinutes();
             if(currenttime==0000)
               flag=1; 
-            if(currenttime==400 || currenttime==0400)//check battery status at every 4 AM
+            if(currenttime==2237 || currenttime==2237)//check battery status at every 4 AM
             {
               
               if(flag==1){
@@ -384,16 +399,23 @@ function battstatus()
 });
 }
 //serial listen
-serialPort.on("open", function () {
+/*serialPort.on("open", function () {
   console.log('open');
   var count=0
+  var res, dataout;
   serialPort.on('data', function(data) {
     console.log('data received: ' + data);
+    dataout=String(data);
+    res = dataout.split(",");//getting strings
+    console.log(res[0]);
+    console.log(res[1]);
+    console.log(res[2]);
+    console.log(res[3]);
     count++;
     console.log('data count : ' + count);
   });
   serialPort.on('error', function(errors) {
     console.log('error in reading: ' + errors);
   });
-});
+});*/
 /////

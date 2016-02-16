@@ -3,8 +3,8 @@ var mosca = require('mosca');
 
  
 var settings = {
-  port: 1883,
-  host: "127.0.0.1"
+  port: 1880,
+  host: "10.129.28.181"
 };
  
 var server = new mosca.Server(settings);

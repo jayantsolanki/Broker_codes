@@ -10,7 +10,8 @@ var ascoltatore = {
 };
 
 var moscaSettings = {
-  port: 1883,
+  port: 1880,
+  host:"10.129.28.181",
   backend: ascoltatore,
   persistence: {
     factory: mosca.persistence.Mongo,
