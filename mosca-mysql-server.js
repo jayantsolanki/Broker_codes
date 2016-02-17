@@ -139,45 +139,46 @@ server.on('clientDisconnected', function( client) { //checking if the device goe
  
 // fired when a message is received 
 server.on('published', function(packet) {
-  var msg=packet.payload; //get value of payload
-  msg=msg.toString();
+  var topic=packet.topic; //get value of payload
+  topic=topic.toString();
   console.log('Client id is ',packet);
   console.log('Published topic'+packet.topic);
-  console.log('Published payload '+msg);
-  console.log('Macid is '+msg.length);
-  if(msg.length>17 && msg.length<24){ //this could be improved
-    var batmacid=msg.substring(0,17);
+  console.log('Published payload '+packet.payload);
+  if(true){ //this could be improved
+    var batmacid=topic.substring(4,21);
     var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
     if(regex.test(batmacid)){ //check if valid macid there
 
-      var batvoltage=msg.substring(17,msg.length);
+      var isbattery=topic.substring(22,topic.length);
       var batmac  = {macid: batmacid};
-      connection.query('SELECT EXISTS(SELECT * FROM battstatus WHERE ?) as find',batmac, function(err, rows, fields) {
-        if (err) throw err;
-        else{
-            var findmac=rows[0]['find'];
-            if(findmac==0){ //check device is the new one, findmac=0 means new entry found, no previous entry in the battery status table
-              var batquery='INSERT INTO battstatus VALUES (DEFAULT,\''+0+'\','+0+', DEFAULT)'
-              connection.query(batquery, function(err, rows, fields) { //insert into the table 
+      if(isbattery=='battery')
+      {
+        //console.log("I am a battery");
+        var msg=packet.payload;
+       // msg=Integer.parseInt(msg);
+        //console.log(msg);
+        var count=0;
+            connection.query('SELECT packet_id from feeds where device_id=\''+batmacid+'\' ORDER BY packet_id DESC LIMIT 1', function(err, rows, fields) {
+              if (!err){
+                if(rows.length>0){
+                  console.log('The solution is: ', rows[rows.length-1]['packet_id']);
+                  count=parseInt(rows[0]['packet_id']);
+                  var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+msg+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+                  }
+                  else
+                  var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+msg+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+            connection.query(batquery, function(err, rows, fields) { //insert into the feed table
                 if (err) throw err;
                 else
-                  console.log('Battery status inserted for device '+batmacid+' with voltage '+batvoltage);
+                  console.log('Battery status inserted for device '+batmacid+' with voltage '+msg);
               });
             }
-          
-            else{
-              console.log('Updating battery status for device '+batmacid);
-              var batquery='UPDATE battstatus SET voltage='+batvoltage+' where macid=\''+0+'\'';
-              connection.query(batquery, function(err, rows, fields) { //updating device status as online  
-                if (err) throw err;
-                else
-                  console.log('Device '+batmacid+' has voltage of '+batvoltage);
+              else
+                console.log('Error while performing Query.');
+            });
             
-              });
-            }
           }
 
-      });
     }
     
   
@@ -426,9 +427,9 @@ serialPort.on("open", function () {
 
     dataout=String(data);
     res = dataout.split(",");//getting strings
-    console.log(res[0]);//stores device id
-    console.log(res[1]);//stored packet number or id
-    console.log(res[2]);//gets device type
+    //console.log(res[0]);//stores device id
+   // console.log(res[1]);//stored packet number or id
+    //console.log(res[2]);//gets device type
     //find if the device is new
     var post  = {macid: res[0]};
       connection.query('SELECT EXISTS(SELECT * FROM devices WHERE ?) as find',post, function(err, rows, fields) {
@@ -448,7 +449,7 @@ serialPort.on("open", function () {
            }
 
            else{
-              console.log('Device '+post.macid+' reconnected');
+              console.log('Device '+post.macid+' sent new data');
             //  var devdis='UPDATE devices SET status=1, type=\''+res[2]+'\' where macid=\''+post.macid+'\'';
              // connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
                 /*if (err) throw err;
@@ -481,7 +482,7 @@ serialPort.on("open", function () {
     }
     console.log(res[3]);
     count++;
-    console.log('data count : ' + count);
+    //console.log('data count : ' + count);
   });
   serialPort.on('error', function(errors) {
     console.log('error in reading: ' + errors);
