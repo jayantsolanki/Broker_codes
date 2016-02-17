@@ -1,14 +1,16 @@
 var mosca = require('mosca');
+var env = require('./settings');//importing settings file, environment variables
 /////serial config
 /*var SerialPort = require("serialport").SerialPort
 var serialPort = new SerialPort("/dev/pts/8", {
   baudrate: 9600
 });*/
 /////////////////
+console.log('printing env oject ',env.mqtt);
 var id, start,stop,action,currentime, item, macid, type, flag=1;
 //mqtt config
 var mqtt    = require('mqtt');
-var mqttaddress='mqtt://10.129.28.118';
+var mqttaddress=env.mqtt;
 
 //mysql configuration
 var mysql      = require('mysql');
@@ -24,18 +26,18 @@ var ascoltatore = {
 
 ///
 var connection = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : 'kygh012xt',
-  database : 'IOT'
+  host     : env.localhost,
+  user     : env.user,
+  password : env.password,
+  database : env.database
 });
 
 connection.connect();
 //configuration ended
  
 var settings = {
-  port: 1883,
-  host: "10.129.28.118",
+  port: env.mport,
+  host: env.mhost,
   backend: ascoltatore,
   persistence: {
     factory: mosca.persistence.Mongo,
