@@ -2,7 +2,7 @@ var mosca = require('mosca');
 var env = require('./settings');//importing settings file, environment variables
 /////serial config
 var SerialPort = require("serialport").SerialPort
-var serialPort = new SerialPort("/dev/pts/10", {
+var serialPort = new SerialPort("/dev/ttyACM1", {
   baudrate: 9600
 })
 /////////////////
