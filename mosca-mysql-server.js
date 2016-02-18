@@ -427,9 +427,9 @@ serialPort.on("open", function () {
 
     dataout=String(data);
     res = dataout.split(",");//getting strings
-    //console.log(res[0]);//stores device id
-   // console.log(res[1]);//stored packet number or id
-    //console.log(res[2]);//gets device type
+    console.log(res[0]);//stores device id
+    console.log(res[1]);//stored packet number or id
+    console.log(res[2]);//gets device type
     //find if the device is new
     var post  = {macid: res[0]};
       connection.query('SELECT EXISTS(SELECT * FROM devices WHERE ?) as find',post, function(err, rows, fields) {
