@@ -68,9 +68,11 @@ var server = new mosca.Server(settings);
 //device discovery
 server.on('clientConnected', function(client) {
     var val=client.id;
-    if(val!='M-O-S-C-A'){ //do not enter client id of server
+    var date = new Date();
+   // if(val!='M-O-S-C-A'){ //do not enter client id of server
       var post  = {macid: val};
-      connection.query('SELECT EXISTS(SELECT * FROM devices WHERE ?) as find',post, function(err, rows, fields) {
+      var check='SELECT EXISTS(SELECT * FROM devices WHERE macid=\''+val+'\') as find';
+      connection.query(check, function(err, rows, fields) {
       //console.log('Inside client connected '+val);
       
         if (err) throw err;
@@ -78,7 +80,7 @@ server.on('clientConnected', function(client) {
             var find=rows[0]['find'];
            // console.log('Inside client connected '+find);
             var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
-            console.log('Mac id is valid? '+regex.test(post.macid));
+            //console.log('Mac id is valid? '+regex.test(post.macid));
             if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
               if(regex.test(post.macid))//check if the client id is the macid
               {
@@ -86,36 +88,36 @@ server.on('clientConnected', function(client) {
                 connection.query(devdis, function(err, rows, fields) { //insert into the table 
                   if (err) throw err;
                   else
-                    console.log('New Device found, adding '+post.macid+' into device table');
+                    console.log('New Device found, adding '+post.macid+' into device table '+date);
                   });
               }
             }
           
             else{
-              console.log('Device '+post.macid+' reconnected');
-              var devdis='UPDATE devices SET status=1 where macid=\''+post.macid+'\'';
+              console.log('Device '+post.macid+' reconnected '+date);
+              var devdis='UPDATE devices SET status=1 where status!=2 and macid=\''+post.macid+'\'';
               connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
                 if (err) throw err;
-                else
-                  console.log('Device '+post.macid+' is online');
+                //else
+                 // console.log('Device '+post.macid+' marked online '+date);
             
               });
             }
           }
       });
-    }
+   // }
     //console.log('client connected', client.id);
 });
 
 server.on('unsubscribed', function(topic, client) { //checking if the device goes offline
     var val=client.id;
-    
-    console.log('client unsubscribed', client.id);
-    var offlineq='UPDATE devices SET status=0 where macid= \''+client.id.toString()+'\'';
+    var date = new Date();
+    console.log('client unsubscribed', client.id+' '+date);
+    var offlineq='UPDATE devices SET status=0 where status!=2 and macid= \''+client.id.toString()+'\'';
     connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
       if (err) throw err;
-      else
-        console.log('Device '+client.id.toString()+' went offline');
+      //else
+        //console.log('Device '+client.id.toString()+' marked offline '+date);
   
     });
 
@@ -124,13 +126,13 @@ server.on('unsubscribed', function(topic, client) { //checking if the device goe
 //
 server.on('clientDisconnected', function( client) { //checking if the device goes disconnect
     var val=client.id;
-
-    console.log('client disconnected', client.id);
-    var offlineq='UPDATE devices SET status=0 where macid= \''+client.id.toString()+'\'';
+    var date = new Date();
+    console.log('client disconnected', client.id+' '+date);
+    var offlineq='UPDATE devices SET status=0 where status!=2 and macid= \''+client.id.toString()+'\'';
     connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
       if (err) throw err;
-      else
-        console.log('Device '+client.id.toString()+' disconnected');
+      //else
+        //console.log('Device '+client.id.toString()+' marked disconnected/Offline '+date);
 
     });
 
@@ -139,11 +141,15 @@ server.on('clientDisconnected', function( client) { //checking if the device goe
  
 // fired when a message is received 
 server.on('published', function(packet) {
+  var date = new Date();
   var topic=packet.topic; //get value of payload
+  var regex1 = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
   topic=topic.toString();
-  console.log('Client id is ',packet);
-  console.log('Published topic'+packet.topic);
-  console.log('Published payload '+packet.payload);
+  if(regex1.test(packet)){
+    console.log('Client id is ',packet);
+    console.log('Published topic '+packet.topic);
+    console.log('Published payload '+packet.payload+' '+date);
+  }
   if(true){ //this could be improved
     var batmacid=topic.substring(4,21);
     var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
@@ -161,7 +167,7 @@ server.on('published', function(packet) {
             connection.query('SELECT packet_id from feeds where device_id=\''+batmacid+'\' ORDER BY packet_id DESC LIMIT 1', function(err, rows, fields) {
               if (!err){
                 if(rows.length>0){
-                  console.log('The solution is: ', rows[rows.length-1]['packet_id']);
+                  //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
                   count=parseInt(rows[0]['packet_id']);
                   var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+msg+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
                   }
@@ -170,11 +176,11 @@ server.on('published', function(packet) {
             connection.query(batquery, function(err, rows, fields) { //insert into the feed table
                 if (err) throw err;
                 else
-                  console.log('Battery status inserted for device '+batmacid+' with voltage '+msg);
+                  console.log('Battery status inserted for device '+batmacid+' with voltage '+msg+' '+date);
               });
             }
               else
-                console.log('Error while performing Query.');
+                console.log('Error while performing Query.'+date);
             });
             
           }
@@ -195,11 +201,14 @@ function setup() {
  // server.authenticate = authenticate;
  // server.authorizePublish = authorizePublish;
  // server.authorizeSubscribe = authorizeSubscribe;
-  console.log('Mosca server is up and running');
+ 
   //var currenttime=date.getTime()
   var tasks = "select * from tasks";
   var minutes = 1, the_interval = 2000; //set time here, every two seconds below code is repeated
+  var date = new Date();
+  console.log('Mosca server is up and running: '+date);
   setInterval(function() {
+    date = new Date();
     connection.query( tasks, function(err, rows){
       if(err) {
         throw err;
@@ -226,6 +235,7 @@ function setup() {
               
               if(flag==1){
                 battstatus();
+                console.log('Schedule battery query sent '+date);
               }
               flag=0;
             }
@@ -264,7 +274,7 @@ function setup() {
 
                // var devices = "select * from devices";
                 if(item!=null)
-                  var devquery='Select macid from devices left join groups on devices.group=groups.id where groups.name=\"'+item+'\"';
+                  var devquery='Select macid from devices left join groups on devices.group=groups.id where groups.name=\"'+item+'\" and devices.type=1';
                 else
                   var devquery='Select macid from devices where devices.macid=\"'+macid+'\"'; //check this code, it is modifiable
                
@@ -276,10 +286,11 @@ function setup() {
                   {
                    // console.log(currenttime);
                     var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                    console.log("Scheduled task started "+date);
                     for (var j=0;j<devs.length;j++)//
                     {
                         
-                        console.log("Switched on "+devs[j].macid)
+                        console.log("Switched on "+devs[j].macid+' '+date)
                         mqttpub(mqttclient,devs[j].macid,1);
                     }
                     mqttclient.end();
@@ -292,7 +303,7 @@ function setup() {
                   if (err)
                     console.log('Update failed');
                   else
-                    console.log('Tasks Entry Updated, Set to 0');
+                    console.log('Tasks Entry Updated, Set to 0 '+date);
                   });
 
 
@@ -303,10 +314,10 @@ function setup() {
                   var query='UPDATE devices SET ? where devices.macid='+macid+'';
                 connection.query(query,upd2, function(err, rows, fields) { //update the table 
                 if (err)
-                  console.log(' Devices Update failed, error:  '+err);
+                  console.log(' Devices Update failed, error:  '+err+' '+date);
                 else{
-                  console.log('Devices Entry Updated, Set to 1');
-                  console.log('Done executing the tasks');
+                  //console.log('Devices Entry Updated, Set to 1');
+                  console.log('Done executing the tasks '+date);
                 }
                 });
 
@@ -323,7 +334,7 @@ function setup() {
               if(currenttime>=stop && action==0)//to switch on the valves
               {
                 if(item!=null)
-                  var devquery='Select macid from devices left join groups on devices.group=groups.id where groups.name=\"'+item+'\"';
+                  var devquery='Select macid from devices left join groups on devices.group=groups.id where groups.name=\"'+item+'\ and devices.type=1"';
                 else
                   var devquery='Select macid from devices where devices.macid=\"'+macid+'\"';
                 connection.query( devquery, function(err, devs){
@@ -334,6 +345,7 @@ function setup() {
                   {
                    // console.log(currenttime);
                    var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                   console.log("Scheduled task started "+date);
                    for (var j=0;j<devs.length;j++)// publishing the message
                    {
                         console.log("Switched off "+devs[j].macid)
@@ -344,12 +356,12 @@ function setup() {
                 });
                 if(type==0)
                 {
-                  console.log("You are in the deletion zone");
+                  //console.log("You are in the deletion zone");
                   connection.query('Delete from tasks where id='+id+'', function(err, rows, fields) { //delete from the table 
                     if (err)
-                      console.log('Manual task deletion failed');
+                      console.log('Manual task deletion failed '+date);
                     else
-                      console.log('Manual task entry deleted');
+                      console.log('Manual task entry deleted '+date);
                     });
                 }
                 else
@@ -358,8 +370,8 @@ function setup() {
                   connection.query('UPDATE tasks SET ? where id='+id+'',upd1, function(err, rows, fields) { //update the table 
                   if (err)
                     console.log('Update failed');
-                  else
-                    console.log('Tasks Entry Updated, Set to 1');
+                  //else
+                    //console.log('Tasks Entry Updated, Set to 1');
                   });
                 }
                 var upd2={action:0};
@@ -367,13 +379,13 @@ function setup() {
                   var query='UPDATE devices SET ? where devices.group in (Select * from (Select devices.group from devices where devices.group in (Select id from groups where groups.name=\"'+item+'\"))tmp)';//group valves are selected
                 else
                   var query='UPDATE devices SET ? where devices.macid=\''+macid+'\''; // if individual valve is scheduled
-                console.log(macid);
+                //console.log(macid);
                 connection.query(query,upd2, function(err, rows, fields) { //update the table 
                 if (err)
-                  console.log('Update failed, error: '+err);
+                  console.log('Update failed, error: '+err+' '+date);
                 else{
-                  console.log('Devices Entry Updated, Set to 0');
-                  console.log('Done executing the tasks');
+                  //console.log('Devices Entry Updated, Set to 0');
+                  console.log('Done executing the tasks '+date);
                 }
                 });
 
@@ -430,6 +442,8 @@ serialPort.on("open", function () {
     console.log(res[0]);//stores device id
     console.log(res[1]);//stored packet number or id
     console.log(res[2]);//gets device type
+    
+    
     //find if the device is new
     var post  = {macid: res[0]};
       connection.query('SELECT EXISTS(SELECT * FROM devices WHERE ?) as find',post, function(err, rows, fields) {
@@ -464,24 +478,34 @@ serialPort.on("open", function () {
     ///
     if(res[2]==='bthm')
     {
-      var sensorVal='INSERT INTO feeds VALUES (DEFAULT,\''+res[0]+'\','+res[1]+',\''+res[2]+'\','+res[3]+','+res[4]+','+res[5]+','+res[6]+',DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
-      connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
-        if (err) throw err;
-        else
-          console.log('Feed added for '+res[0]+' on '+date);
-        });
+      console.log(res[3]);//gets battery
+      console.log(res[4]);//gets temp
+      console.log(res[5]);//gets humidity
+      console.log(res[6]);//gets moisture
+      if(!isNaN(res[3])&&!isNaN(res[4])&&!isNaN(res[5])&&!isNaN(res[6]))
+      {
+        var sensorVal='INSERT INTO feeds VALUES (DEFAULT,\''+res[0]+'\','+res[1]+',\''+res[2]+'\','+res[3]+','+res[4]+','+res[5]+','+res[6]+',DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+        connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
+          if (err)
+          console.log('Error in inserting serial data, error: '+err+', time: '+date);
+          else
+            console.log('Feed added for '+res[0]+' on '+date);
+          });
+      }
+      else
+        console.log('Packet is corrupted, client id: '+res[0]+' '+date);
     }
     else if(res[2]==='bm')
     {
       var sensorVal='INSERT INTO feeds VALUES (DEFAULT,\''+res[0]+'\','+res[1]+',\''+res[2]+'\',NULL, NULL, NULL,'+res[3]+',DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
       connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
-        if (err) throw err;
+        if (err)
+        console.log('Error in inserting serial data, error: '+err+', time: '+date);
         else
           console.log('Feed added for '+res[0]+' on '+date);
         });
     }
-    console.log(res[3]);
-    count++;
+    //count++;
     //console.log('data count : ' + count);
   });
   serialPort.on('error', function(errors) {
