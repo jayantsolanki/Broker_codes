@@ -177,6 +177,9 @@ server.on('published', function(packet) {
                 if (err) throw err;
                 else
                   console.log('Battery status inserted for device '+batmacid+' with voltage '+msg+' '+date);
+                  var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                  mqttpub(mqttclient,devs[j].batmacid,3); //sending hibernate signal, replacing 2 by 3
+                  console.log('Published 3 to '+batmacid+' '+date);
               });
             }
               else
@@ -230,7 +233,7 @@ function setup() {
             currenttime=date.getHours()*100+date.getMinutes();
             if(currenttime==0000)
               flag=1; 
-            if(currenttime==0400 || currenttime==400)//check battery status at every 4 AM
+            if(currenttime==1600 || currenttime==1600)//check battery status at every 4 AM
             {
               
               if(flag==1){
@@ -413,7 +416,7 @@ function mqttpub(mqttclient,macid,action)//method for publishing the message to 
 // battery status check
 function battstatus()
 {
-  var query='Select macid from devices';
+  var query='Select macid from devices where type=\'1\'';
   connection.query(query,function(err,rows,fields){
     if(err)
       console.log('Error in checking battery status, '+err);
