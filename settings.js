@@ -1,5 +1,3 @@
-                                
-
 module.exports={
 /************Database mysql settings************/
 localhost:'localhost',
@@ -10,8 +8,9 @@ database:'IOT',
 mhost:"10.129.28.118",
 mport:1883,
 /***********mqtt address************/
-mqtt:'mqtt://10.129.28.118'
+mqtt:'mqtt://10.129.28.118',
 /***************Serial Port*******************/
+portNo:'/dev/ttyACM1'
+/******************/
 };
-//exports.mqtt:mqtt;
 
