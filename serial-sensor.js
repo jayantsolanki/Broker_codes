@@ -17,15 +17,15 @@ var log = new Logger({name:'Serial-Sensor',
     },
     {
       level: 'error',
-      path: './log/serial.log'  // log ERROR and above to a file
+      path: './log/iot.log'  // log ERROR and above to a file
     },
     {
       level: 'warn',
-      path: './log/serial.log'  // log WARNING and above to a file
+      path: './log/iot.log'  // log WARNING and above to a file
     },
     {
       level: 'info',
-      path: './log/serial.log'  // log INFO and above to a file
+      path: './log/iot.log'  // log INFO and above to a file
     }
   ]
 
