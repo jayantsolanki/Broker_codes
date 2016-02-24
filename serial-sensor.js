@@ -144,3 +144,16 @@ serialPort.on("open", function () {
   });
 
 });
+
+setInterval(function() { 
+  //checking for sensor device is offline or not
+  var checkstatus='Update devices SET status=0, seen=now() where macid in (select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275) and status not in (0,2)';
+  connection.query(checkstatus, function(err, rows, fields) { //update the table 
+      if (err)
+        log.error("MYSQL ERROR "+err);
+    //  else{
+        //console.log('Devices Entry Updated, Set to 0');
+       // log.info('Done checking Sensor device status');
+     // }
+  });
+ }, 2000);
