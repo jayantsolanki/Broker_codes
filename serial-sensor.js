@@ -75,7 +75,7 @@ serialPort.on("open", function () {
       //console.log('Inside client connected '+val);
       
         if (err) 
-        log.error(err);
+          log.error(err);
         else{
             var find=rows[0]['find'];
            // console.log('Inside client connected '+find);
@@ -89,16 +89,17 @@ serialPort.on("open", function () {
                   });
            }
 
-          // else{
-               //log.info('Device '+post.macid+' sent new data');
-            //  var devdis='UPDATE devices SET status=1, type=\''+res[2]+'\' where macid=\''+post.macid+'\'';
-             // connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
-                /*if (err) throw err;
-                else
-                  console.log('Device '+post.macid+' is online');*/
+           else{
+               log.info('Device '+post.macid+' sent new data');
+            var devdis='UPDATE devices SET status=1, seen= now() where status in (0,2) and macid=\''+post.macid+'\'';
+             connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
+                if (err) 
+                  log.error(err);
+               // else
+                 // log.info('Device '+post.macid+' is online');
             
-              //});
-           // }
+              });
+            }
 
          }
        });
