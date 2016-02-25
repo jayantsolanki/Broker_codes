@@ -137,10 +137,9 @@ serialPort.on("open", function () {
                    "batValue":res[3],
                    "tempValue":res[4],
                    "humidityValue":res[5],
-                   "moistValue":res[6],
-                   "date":date
+                   "moistValue":res[6]
                    };
-                   console.log("data is here ",jsonS);
+                   console.log("data is here ",Date.now().toString());
                 wscon.send(JSON.stringify(jsonS));
             }
         }
