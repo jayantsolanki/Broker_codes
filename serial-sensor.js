@@ -1,4 +1,9 @@
 var env = require('./settings');//importing settings file, environment variables
+/***************Adding websocket feature*******/
+var WebSocketServer = require('ws').Server,
+    wss = new WebSocketServer({port: 8181});
+var wscon=null;
+  ///////////////////////
 ////initiating the bunyan log
 var Logger = require('bunyan');
 var log = new Logger({name:'Serial-Sensor', 
@@ -57,7 +62,8 @@ serialPort.on("open", function () {
   var res, dataout;
   serialPort.on('data', function(data) {
     log.info('data received: '+data);
-    var date = new Date();
+    
+    
     //console.log("Time: "+date);
 
     dataout=String(data);
@@ -69,7 +75,7 @@ serialPort.on("open", function () {
     
     //find if the device is new
     var post  = {macid: res[0]};
-    //if(res[2].substring()){ //check if the data is corrupt or not bu checking the third parameter, string
+    //if(res[2].substring()){ //check if the data is corrupt or not by checking the third parameter, string
 
       connection.query('SELECT EXISTS(SELECT * FROM devices WHERE ?) as find',post, function(err, rows, fields) {
       //console.log('Inside client connected '+val);
@@ -119,6 +125,25 @@ serialPort.on("open", function () {
          // else
             // log.info('Feed added for '+res[0]+' on '+date);
           });
+        if(wscon!=null){//sending data via websocket
+          if(wscon.readyState == 1) {
+              var d = new Date();
+              var date =  d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate()+ "-" +d.getHours() + "-" + d.getMinutes();
+              console.log(date);
+              var jsonS={
+                  "deviceId":res[0],
+                   "packetNo":res[1],
+                   "deviceType":res[2],
+                   "batValue":res[3],
+                   "tempValue":res[4],
+                   "humidityValue":res[5],
+                   "moistValue":res[6],
+                   "date":date
+                   };
+                   console.log("data is here ",jsonS);
+                wscon.send(JSON.stringify(jsonS));
+            }
+        }
       }
       else
          log.warn('Packet is corrupted, client id: '+res[0]+' '+date);
@@ -144,6 +169,24 @@ serialPort.on("open", function () {
   });
 
 });
+/****************implementing websocket***********/
+wss.on('connection', function(ws) {
+  console.log('client [%s] connected');
+        wscon=ws;
+     
+
+  ws.on('message', function(message) {
+    var stock_request = JSON.parse(message);
+  });
+
+  ws.on('close', function() {
+      console.log("connection closed");
+      wscon=null;
+  });
+});
+
+
+//////////////////////////////////
 
 setInterval(function() { 
   //checking for sensor device is offline or not
