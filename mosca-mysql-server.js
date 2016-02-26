@@ -2,7 +2,7 @@ var mosca = require('mosca');
 var env = require('./settings');//importing settings file, environment variables
 ////initiating the bunyan log
 var Logger = require('bunyan');
-var log = new Logger({name:'Serial-Sensor', 
+var log = new Logger({name:'ESP-Valve', 
          streams: [
     {
       level: 'info',
@@ -189,6 +189,7 @@ server.on('published', function(packet) {
   }
   //if(true){ //this could be improved
   var batmacid=topic.substring(4,21);
+  console.log('Mac id publsihed '+batmacid);
   var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
   if(regex.test(batmacid)){ //check if valid macid there
 
@@ -440,6 +441,7 @@ function setup() {
       }
     });
   // do your stuff here
+  
 }, the_interval);
 }
 //////////////
