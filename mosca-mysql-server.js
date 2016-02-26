@@ -182,14 +182,15 @@ server.on('published', function(packet) {
   var topic=packet.topic; //get value of payload
   var regex1 = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
   topic=topic.toString();
-  if(regex1.test(packet)){
+ // if(regex1.test(packet)){
     log.info('Client id is ',packet);
     log.info('Published topic '+packet.topic);
     log.info('Published payload '+packet.payload);
-  }
+ // }
   //if(true){ //this could be improved
   var batmacid=topic.substring(4,21);
   console.log('Mac id publsihed '+batmacid);
+// console.log("Macid check is "+regex.test(batmacid));
   var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
   if(regex.test(batmacid)){ //check if valid macid there
 
