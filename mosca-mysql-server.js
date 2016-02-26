@@ -270,7 +270,7 @@ function setup() {
             currenttime=date.getHours()*100+date.getMinutes();
             if(currenttime==0000)
               flag=1; 
-            if(currenttime==1600 || currenttime==1600)//check battery status at every 4 AM
+            if(currenttime==1830 || currenttime==1830)//check battery status at every 4 AM
             {
               
               if(flag==1){
@@ -448,7 +448,7 @@ function setup() {
 //////////////
 function mqttpub(mqttclient,macid,action)//method for publishing the message to esp module
 {
-   mqttclient.publish('esp/'+macid, action.toString(), {retain:true, qos: 1});
+   mqttclient.publish('esp/'+macid, action.toString(), {retain:true, qos: 0});
 }
 
 // battery status check
