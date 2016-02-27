@@ -1,5 +1,10 @@
 var mosca = require('mosca');
 var env = require('./settings');//importing settings file, environment variables
+/***************Adding websocket feature*******/
+var WebSocketServer = require('ws').Server,
+    wss = new WebSocketServer({port: 8180});
+var wscon=null;
+  ///////////////////////
 ////initiating the bunyan log
 var Logger = require('bunyan');
 var log = new Logger({name:'ESP-Valve', 
@@ -189,7 +194,7 @@ server.on('published', function(packet) {
   }
   //if(true){ //this could be improved
   var batmacid=topic.substring(4,21);
-  console.log('Mac id publsihed '+batmacid);
+  //console.log('Mac id publsihed '+batmacid);
   var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
   if(regex.test(batmacid)){ //check if valid macid there
 
@@ -206,7 +211,7 @@ server.on('published', function(packet) {
             if (!err){
               if(rows.length>0){
                 //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
-                count=parseInt(rows[0]['packet_id']);
+                count=parseInt(rows[0]['packet_id']); //storing last packet id in 
                 var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+msg+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
                 }
                 else
@@ -256,7 +261,7 @@ function setup() {
       {
         if(rows.length>0)
         {
-          for (var i=0;i<rows.length;i++)//implementing scheduled tasks
+          for (var i=0;i<rows.length;i++)//implementing scheduled tasks, it should be improved
           {
             id=rows[i]['id'];
             start=rows[i]['start'];
@@ -269,7 +274,7 @@ function setup() {
             currenttime=date.getHours()*100+date.getMinutes();
             if(currenttime==0000)
               flag=1; 
-            if(currenttime==1830 || currenttime==1830)//check battery status at every 4 AM
+            if(currenttime==1830 || currenttime==1830)//check battery status at every 6:30pm
             {
               
               if(flag==1){
@@ -314,8 +319,8 @@ function setup() {
                // var devices = "select * from devices";
                 if(item!=null)
                   var devquery='Select macid from devices left join groups on devices.group=groups.id where groups.name=\"'+item+'\" and devices.type=1';
-                else
-                  var devquery='Select macid from devices where devices.macid=\"'+macid+'\"'; //check this code, it is modifiable
+               // else
+                  //var devquery='Select macid from devices where devices.macid=\"'+macid+'\"'; //check this code, it is modifiable, for manual switch on/off
                
                 connection.query(devquery, function(err, devs){
                   if(err) {
@@ -324,14 +329,14 @@ function setup() {
                   else
                   {
                    // console.log(currenttime);
-                    var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-                    log.info("Scheduled task started for switching on the Valves");
-                    for (var j=0;j<devs.length;j++)//
-                    {
-                        log.info("Switched on "+devs[j].macid);
-                        mqttpub(mqttclient,devs[j].macid,1);
-                    }
-                    mqttclient.end();
+                      var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                      log.info("Scheduled task started for switching on the Valves");
+                      for (var j=0;j<devs.length;j++)//
+                      {
+                          log.info("Switched on "+devs[j].macid);
+                          mqttpub(mqttclient,devs[j].macid,1);
+                      }
+                      mqttclient.end();
 
                   }
                 });
@@ -341,7 +346,7 @@ function setup() {
                   if (err)
                    log.error("MYSQL ERROR "+err);
                  //else
-                   // log.info('Tasks Entry Updated, Set to 0');
+                   // log.info('Tasks Entry Updated, Set to 0'); // set action to 0 means , next time the valve will be switched off when reached the stop time
                   });
 
 
@@ -349,7 +354,7 @@ function setup() {
                 if(item!=null)
                   var query='UPDATE devices SET ? where devices.group in (Select * from (Select devices.group from devices where devices.group in (Select id from groups where groups.name=\"'+item+'\"))tmp)';
                 else
-                  var query='UPDATE devices SET ? where devices.macid='+macid+'';
+                  var query='UPDATE devices SET ? where devices.macid='+macid+'';// action =1 means valve is currently on
                 connection.query(query,upd2, function(err, rows, fields) { //update the table 
                 if (err)
                   log.error("MYSQL ERROR "+err);
@@ -448,6 +453,19 @@ function setup() {
 function mqttpub(mqttclient,macid,action)//method for publishing the message to esp module
 {
    mqttclient.publish('esp/'+macid, action.toString(), {retain:true, qos: 0});
+   if(wscon!=null){//sending data via websocket
+      if(wscon.readyState == 1) {
+          var jsonS={
+            "deviceId":macid,
+             "status":action
+             };
+          wscon.broadcast = function broadcast(data) {
+            wscon.clients.forEach(function each(client) {
+              client.send(JSON.stringify(jsonS));//sending status to webpage of the current state of the device
+            });
+          };
+      }
+    }
 }
 
 // battery status check
@@ -468,7 +486,26 @@ function battstatus()
     }
 });
 }
-//serial listen
+/****************implementing websocket***********/
+wss.on('connection', function(ws) {
+  console.log('client [%s] connected');
+        wscon=ws;
+     
 
-/////
+  ws.on('message', function(message) {
+    var response = JSON.parse(message);
+    var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+    mqttpub(mqttclient,response.deviceId,response.payload);
+    mqttclient.end();
+    console.log('message received ', response.deviceId);
+  });
 
+  ws.on('close', function() {
+      console.log("connection closed");
+      wscon=null;
+  });
+});
+
+
+//////////////////////////////////
+  
