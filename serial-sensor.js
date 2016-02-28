@@ -1,5 +1,6 @@
 var env = require('./settings');//importing settings file, environment variables
 /***************Adding websocket feature*******/
+var uuid = require('node-uuid');
 var WebSocketServer = require('ws').Server,
     wss = new WebSocketServer({port: 8181});
 var wscon=null;
@@ -97,14 +98,19 @@ serialPort.on("open", function () {
 
            else{
                log.info('Device '+post.macid+' sent new data');
-            var devdis='UPDATE devices SET status=1, seen= now() where status in (0,2) and macid=\''+post.macid+'\'';
-             connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
-                if (err) 
-                  log.error(err);
-               // else
-                 // log.info('Device '+post.macid+' is online');
-            
-              });
+               var devdis='UPDATE devices SET status=1, seen= now() where status in (0,2) and macid=\''+post.macid+'\'';
+               connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
+                  if (err) 
+                    log.error(err);
+                 // else
+                   // log.info('Device '+post.macid+' is online');
+              
+                });
+               var jsonS={
+                     "deviceId":val,
+                     "status":1
+               };
+               sendAll(jsonS);//sending  online status to website
             }
 
          }
@@ -125,24 +131,16 @@ serialPort.on("open", function () {
          // else
             // log.info('Feed added for '+res[0]+' on '+date);
           });
-        if(wscon!=null){//sending data via websocket
-          if(wscon.readyState == 1) {
-              var d = new Date();
-              var date =  d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate()+ "-" +d.getHours() + "-" + d.getMinutes();
-              console.log(date);
-              var jsonS={
-                  "deviceId":res[0],
-                   "packetNo":res[1],
-                   "deviceType":res[2],
-                   "batValue":res[3],
-                   "tempValue":res[4],
-                   "humidityValue":res[5],
-                   "moistValue":res[6]
-                   };
-                   console.log("data is here ",Date.now().toString());
-                wscon.send(JSON.stringify(jsonS));
-            }
-        }
+        var jsonS={
+            "deviceId":res[0],
+             "packetNo":res[1],
+             "deviceType":res[2],
+             "batValue":res[3],
+             "tempValue":res[4],
+             "humidityValue":res[5],
+             "moistValue":res[6]
+        };
+        sendAll(jsonS); //sending live stata points for the chart to all clients
       }
       else
          log.warn('Packet is corrupted, client id: '+res[0]+' '+date);
@@ -170,22 +168,42 @@ serialPort.on("open", function () {
 });
 /****************implementing websocket***********/
 wss.on('connection', function(ws) {
-  console.log('client [%s] connected');
-        wscon=ws;
-     
+  wscon=ws;
+  var client_uuid=uuid.v4();
+  clients.push({"id": client_uuid, "ws": wscon});//adds client detail
+  log.info('client [%s] connected',client_uuid);     
 
-  ws.on('message', function(message) {
+ /* wscon.on('message', function(message) {
     var stock_request = JSON.parse(message);
-  });
+  });*/
 
-  ws.on('close', function() {
-      console.log("connection closed");
+  wscon.on('close', function() {
+       log.info("web socket connection closed ",client_uuid);
       wscon=null;
   });
 });
 
 
 //////////////////////////////////
+/******************broadcast*****************/
+function sendAll(jsonS){  //
+  if(wscon!=null){//sending data via websocket
+      if(wscon.readyState == 1) {
+            for(var i=0; i<clients.length; i++) {
+                var client = clients[i].ws;
+                if(client.readyState != client.OPEN){ //checking for dead socket
+                    log.error('Client state is ' + client.readyState);
+                }
+                else{
+                    //log.info('client [%s]: %s', clients[i].id, jsonS);
+                    client.send(JSON.stringify(jsonS));//sending status to webpage of the current state of the device
+                }
+                
+            }
+      }
+    }
+}
+////////////////////////////
 
 setInterval(function() { 
   //checking for sensor device is offline or not
@@ -198,4 +216,5 @@ setInterval(function() {
        // log.info('Done checking Sensor device status');
      // }
   });
+
  }, 2000);
