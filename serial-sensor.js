@@ -4,6 +4,7 @@ var uuid = require('node-uuid');
 var WebSocketServer = require('ws').Server,
     wss = new WebSocketServer({port: 8181});
 var wscon=null;
+var clients=[];
   ///////////////////////
 ////initiating the bunyan log
 var Logger = require('bunyan');
@@ -98,16 +99,16 @@ serialPort.on("open", function () {
 
            else{
                log.info('Device '+post.macid+' sent new data');
-               var devdis='UPDATE devices SET status=1, seen= now() where status in (0,2) and macid=\''+post.macid+'\'';
-               connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
-                  if (err) 
-                    log.error(err);
-                 // else
-                   // log.info('Device '+post.macid+' is online');
-              
-                });
-               var jsonS={
-                     "deviceId":post.macid,
+            var devdis='UPDATE devices SET status=1, seen= now() where status in (0,2) and macid=\''+post.macid+'\'';
+             connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
+                if (err) 
+                  log.error(err);
+               // else
+                 // log.info('Device '+post.macid+' is online');
+            
+              });
+             var jsonS={
+                     "deviceId":val,
                      "status":1
                };
                sendAll(jsonS);//sending  online status to website
@@ -131,7 +132,7 @@ serialPort.on("open", function () {
          // else
             // log.info('Feed added for '+res[0]+' on '+date);
           });
-        var jsonS={
+          var jsonS={
             "deviceId":res[0],
              "packetNo":res[1],
              "deviceType":res[2],
@@ -139,8 +140,8 @@ serialPort.on("open", function () {
              "tempValue":res[4],
              "humidityValue":res[5],
              "moistValue":res[6]
-        };
-        sendAll(jsonS); //sending live stata points for the chart to all clients
+          };
+          sendAll(jsonS);
       }
       else
          log.warn('Packet is corrupted, client id: '+res[0]+' '+date);
@@ -171,20 +172,19 @@ wss.on('connection', function(ws) {
   wscon=ws;
   var client_uuid=uuid.v4();
   clients.push({"id": client_uuid, "ws": wscon});//adds client detail
-  log.info('client [%s] connected',client_uuid);     
+  log.info('client [%s] connected',client_uuid);
+     
 
- /* wscon.on('message', function(message) {
+  ws.on('message', function(message) {
     var stock_request = JSON.parse(message);
-  });*/
+  });
 
-  wscon.on('close', function() {
-       log.info("web socket connection closed ",client_uuid);
+  ws.on('close', function() {
+      console.log("connection closed");
       wscon=null;
   });
 });
 
-
-//////////////////////////////////
 /******************broadcast*****************/
 function sendAll(jsonS){  //
   if(wscon!=null){//sending data via websocket
@@ -192,7 +192,7 @@ function sendAll(jsonS){  //
             for(var i=0; i<clients.length; i++) {
                 var client = clients[i].ws;
                 if(client.readyState != client.OPEN){ //checking for dead socket
-                    log.error('Client state is ' + client.readyState);
+                    log.error('Client state is ' + client.readyState+' that is unresponsive');
                 }
                 else{
                     //log.info('client [%s]: %s', clients[i].id, jsonS);
@@ -203,7 +203,8 @@ function sendAll(jsonS){  //
       }
     }
 }
-////////////////////////////
+//////////////////////////////////
+
 
 setInterval(function() { 
   //checking for sensor device is offline or not
