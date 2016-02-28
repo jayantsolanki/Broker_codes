@@ -107,7 +107,7 @@ serialPort.on("open", function () {
               
                 });
                var jsonS={
-                     "deviceId":val,
+                     "deviceId":post.macid,
                      "status":1
                };
                sendAll(jsonS);//sending  online status to website
