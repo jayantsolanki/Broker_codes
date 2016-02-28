@@ -1,9 +1,11 @@
 var mosca = require('mosca');
 var env = require('./settings');//importing settings file, environment variables
 /***************Adding websocket feature*******/
+var uuid = require('node-uuid');
 var WebSocketServer = require('ws').Server,
     wss = new WebSocketServer({port: 8180});
 var wscon=null;
+var clients=[];
   ///////////////////////
 ////initiating the bunyan log
 var Logger = require('bunyan');
@@ -105,7 +107,7 @@ var server = new mosca.Server(settings);
 //device discovery
 server.on('clientConnected', function(client) {
     var val=client.id;
-    var date = new Date();
+    //var date = new Date();
    // if(val!='M-O-S-C-A'){ //do not enter client id of server
       var post  = {macid: val};
       var check='SELECT EXISTS(SELECT * FROM devices WHERE macid=\''+val+'\') as find';
@@ -133,7 +135,7 @@ server.on('clientConnected', function(client) {
             }
           
             else{
-              log.info('Device '+post.macid+' reconnected '+date);
+              log.info('Device '+post.macid+' reconnected ');
               var devdis='UPDATE devices SET status=1, seen= now() where status!=2 and macid=\''+post.macid+'\'';
               connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
                 if (err)
@@ -142,6 +144,11 @@ server.on('clientConnected', function(client) {
                  // console.log('Device '+post.macid+' marked online '+date);
             
               });
+              var jsonS={
+                     "deviceId":val,
+                     "status":1
+               };
+               sendAll(jsonS);//sending  online status to website
             }
           }
       });
@@ -151,7 +158,7 @@ server.on('clientConnected', function(client) {
 
 server.on('unsubscribed', function(topic, client) { //checking if the device goes offline
     var val=client.id;
-    var date = new Date();
+    //var date = new Date();
     log.info('client unsubscribed', client.id);
     var offlineq='UPDATE devices SET status=0, seen= now() where status!=2 and macid= \''+client.id.toString()+'\'';
     connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
@@ -161,13 +168,18 @@ server.on('unsubscribed', function(topic, client) { //checking if the device goe
         //console.log('Device '+client.id.toString()+' marked offline '+date);
   
     });
+    var jsonS={
+         "deviceId":val,
+         "status":0
+   };
+   sendAll(jsonS);//sending  offline status to website
 
 });
 
 //
 server.on('clientDisconnected', function( client) { //checking if the device goes disconnect
     var val=client.id;
-    var date = new Date();
+    //var date = new Date();
     log.info('client disconnected', client.id);
     var offlineq='UPDATE devices SET status=0, seen= now() where status!=2 and macid= \''+client.id.toString()+'\'';
     connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
@@ -177,13 +189,18 @@ server.on('clientDisconnected', function( client) { //checking if the device goe
         //console.log('Device '+client.id.toString()+' marked disconnected/Offline '+date);
 
     });
+    var jsonS={
+         "deviceId":val,
+         "status":0
+    };
+    sendAll(jsonS);//sending  offline status to website
 
 });
 //
  
 // fired when a message is received 
 server.on('published', function(packet) {
-  var date = new Date();
+  //var date = new Date();
   var topic=packet.topic; //get value of payload
   var regex1 = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
   topic=topic.toString();
@@ -217,16 +234,16 @@ server.on('published', function(packet) {
                 }
                 else
                 var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+msg+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
-          connection.query(batquery, function(err, rows, fields) { //insert into the feed table
-              if (err)
-                log.error("MYSQL ERROR "+err);
-              else
-                log.info('Battery status inserted for device '+batmacid+' with voltage '+msg);
-                var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-                mqttpub(mqttclient,batmacid,3); //sending hibernate signal, replacing 2 by 3
-                log.info('Published 3 to '+batmacid);
-                mqttclient.end();
-            });
+                connection.query(batquery, function(err, rows, fields) { //insert into the feed table
+                if (err)
+                  log.error("MYSQL ERROR "+err);
+                else
+                  log.info('Battery status inserted for device '+batmacid+' with voltage '+msg);
+                  var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                  mqttpub(mqttclient,batmacid,3); //sending hibernate signal, replacing 2 by 3
+                  log.info('Published 3 to '+batmacid);
+                  mqttclient.end();
+                });
           }
             else
               log.error('Error while performing Query');
@@ -454,19 +471,11 @@ function setup() {
 function mqttpub(mqttclient,macid,action)//method for publishing the message to esp module
 {
    mqttclient.publish('esp/'+macid, action.toString(), {retain:true, qos: 0});
-   if(wscon!=null){//sending data via websocket
-      if(wscon.readyState == 1) {
-          var jsonS={
-            "deviceId":macid,
-             "status":action
-             };
-          wscon.broadcast = function broadcast(data) {
-            wscon.clients.forEach(function each(client) {
-              client.send(JSON.stringify(jsonS));//sending status to webpage of the current state of the device
-            });
-          };
-      }
-    }
+   var jsonS={
+         "deviceId":macid,
+         "action":action
+   };
+   sendAll(jsonS);//sending button status to all device
 }
 
 // battery status check
@@ -489,24 +498,42 @@ function battstatus()
 }
 /****************implementing websocket***********/
 wss.on('connection', function(ws) {
-  console.log('client [%s] connected');
-        wscon=ws;
-     
-
-  ws.on('message', function(message) {
+  wscon=ws;
+  var client_uuid=uuid.v4();
+  clients.push({"id": client_uuid, "ws": wscon});//adds client detail
+  log.info('client [%s] connected',client_uuid);
+  
+  wscon.on('message', function(message) {
     var response = JSON.parse(message);
     var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
     mqttpub(mqttclient,response.deviceId,response.payload);
     mqttclient.end();
-    console.log('message received ', response.deviceId);
+    //console.log('message received ', response.deviceId);
   });
 
-  ws.on('close', function() {
-      console.log("connection closed");
+  wscon.on('close', function() {
+      log.info("web socket connection closed ",client_uuid);
       wscon=null;
   });
 });
 
-
 //////////////////////////////////
-  
+
+/******************broadcast*****************/
+function sendAll(jsonS){  //
+  if(wscon!=null){//sending data via websocket
+      if(wscon.readyState == 1) {
+            for(var i=0; i<clients.length; i++) {
+                var client = clients[i].ws;
+                if(client.readyState != client.OPEN){ //checking for dead socket
+                    log.error('Client state is ' + client.readyState+' that is unresponsive');
+                }
+                else{
+                    //log.info('client [%s]: %s', clients[i].id, jsonS);
+                    client.send(JSON.stringify(jsonS));//sending status to webpage of the current state of the device
+                }
+                
+            }
+      }
+    }
+}
