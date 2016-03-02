@@ -24,16 +24,25 @@ var log = new Logger({name:'ESP-Valve',
       stream: process.stdout            // log warning and above to stdout
     },
     {
+      type: 'rotating-file',
+      period: '1d',   // daily rotation
       level: 'error',
-      path: './log/iot.log'  // log ERROR and above to a file
+      path: './log/iot.log',  // log ERROR and above to a file
+      count: 1000        // keep 1000 back copies
     },
     {
+      type: 'rotating-file',
+      period: '1d',   // daily rotation
       level: 'warn',
-      path: './log/iot.log'  // log WARNING and above to a file
+      path: './log/iot.log',  // log WARNING and above to a file
+      count: 1000        // keep 1000 back copies
     },
     {
+      type: 'rotating-file',
+      period: '1d',   // daily rotation
       level: 'info',
-      path: './log/iot.log'  // log INFO and above to a file
+      path: './log/iot.log',  // log INFO and above to a file
+      count: 1000        // keep 1000 back copies
     }
   ]
 
