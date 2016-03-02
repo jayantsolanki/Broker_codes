@@ -24,16 +24,25 @@ var log = new Logger({name:'ESP-Valve',
       stream: process.stdout            // log warning and above to stdout
     },
     {
+      type: 'rotating-file',
+      period: '1d',   // daily rotation
       level: 'error',
-      path: './log/iot.log'  // log ERROR and above to a file
+      path: './log/iot.log',  // log ERROR and above to a file
+      count: 1000        // keep 1000 back copies
     },
     {
+      type: 'rotating-file',
+      period: '1d',   // daily rotation
       level: 'warn',
-      path: './log/iot.log'  // log WARNING and above to a file
+      path: './log/iot.log',  // log WARNING and above to a file
+      count: 1000        // keep 1000 back copies
     },
     {
+      type: 'rotating-file',
+      period: '1d',   // daily rotation
       level: 'info',
-      path: './log/iot.log'  // log INFO and above to a file
+      path: './log/iot.log',  // log INFO and above to a file
+      count: 1000        // keep 1000 back copies
     }
   ]
 
@@ -524,7 +533,7 @@ function sendAll(jsonS){  //
             for(var i=0; i<clients.length; i++) {
                 var client = clients[i].ws;
                 if(client.readyState != client.OPEN){ //checking for dead socket
-                    log.error('Client state is ' + client.readyState+' that is unresponsive');
+                    //log.error('Client state is ' + client.readyState+' that is unresponsive');
                 }
                 else{
                     //log.info('client [%s]: %s', clients[i].id, jsonS);
