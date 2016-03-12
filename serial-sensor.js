@@ -1,4 +1,11 @@
 var env = require('./settings');//importing settings file, environment variables
+/**************thingSpeak client**************/
+var ThingSpeakClient = require('thingspeakclient');
+var client = new ThingSpeakClient({
+  server:'http://0.0.0.0:3000',
+  updateTimeout:20000
+});
+
 /***************Adding websocket feature*******/
 var uuid = require('node-uuid');
 var WebSocketServer = require('ws').Server,
@@ -23,25 +30,16 @@ var log = new Logger({name:'Serial-Sensor',
       stream: process.stdout            // log warning and above to stdout
     },
     {
-      type: 'rotating-file',
-      period: '1d',   // daily rotation
       level: 'error',
-      path: './log/iot.log',  // log ERROR and above to a file
-      count: 1000        // keep 1000 back copies
+      path: './log/iot.log'  // log ERROR and above to a file
     },
     {
-      type: 'rotating-file',
-      period: '1d',   // daily rotation
       level: 'warn',
-      path: './log/iot.log',  // log WARNING and above to a file
-      count: 1000        // keep 1000 back copies
+      path: './log/iot.log'  // log WARNING and above to a file
     },
     {
-      type: 'rotating-file',
-      period: '1d',   // daily rotation
       level: 'info',
-      path: './log/iot.log',  // log INFO and above to a file
-      count: 1000        // keep 1000 back copies
+      path: './log/iot.log'  // log INFO and above to a file
     }
   ]
 
@@ -56,8 +54,14 @@ var connection = mysql.createConnection({
   password : env.password,
   database : env.database
 });
-
-connection.connect();
+var thingspeak = mysql.createConnection({ //for thingspeak
+  host     : env.localhost,
+  user     : env.user,
+  password : env.password,
+  database : env.database2//thingspeak
+});
+connection.connect();//general
+thingspeak.connect();//thingspeak
 //configuration ended
 /////serial config
 var SerialPort = require("serialport").SerialPort
@@ -68,6 +72,7 @@ var serialPort = new SerialPort(env.portNo, {
 //serial listen
 serialPort.on("open", function () {
   log.info(env.portNo+' port opened');
+  attachChannels(); //attaching the api-keys
   //console.log('open');
   var count=0
   var res, dataout;
@@ -101,9 +106,21 @@ serialPort.on("open", function () {
                 connection.query(devdis, function(err, rows, fields) { //insert into the table 
                   if (err) 
                   log.error(err);
-                  else
+                  else{
                     log.info('New Sensor Device found, adding '+post.macid+' into device table');
-                  });
+                    client.createChannel(1, { 'api_key':env.apiKey,'name':res[0], 'field1':'batValue','field2':'tempValue','field3':'humidValue','field4':'moistValue','field5':'packetID'}, function(err) {
+                      if (!err) {//channel creation done
+                          log.info('New channel created for sensor: '+res[0]);
+                          attachChannel(res[0]);//attaching the channel;
+                      }
+                      else
+                      {
+                        console.log(err)
+                      }
+                     });
+                  }
+                });
+                  
            }
 
            else{
@@ -150,7 +167,18 @@ serialPort.on("open", function () {
              "humidityValue":res[5],
              "moistValue":res[6]
           };
-          sendAll(jsonS);
+          sendAll(jsonS);//to websocket client
+          findChannel(res[0], function(channel_Id){//updating the thingspeak feed
+                client.updateChannel(channel_Id, { "field1":res[3],"field2":res[4],"field3":res[5],"field4":res[6],"field5":res[1]}, function(err, resp) {
+                if (!err && resp > 0) {
+                    log.info('Thingspeak feed update successfully for channel id '+channel_Id);
+                }
+                });
+             
+
+          });
+
+          
       }
       else
          log.warn('Packet is corrupted, client id: '+res[0]+' '+date);
@@ -201,7 +229,7 @@ function sendAll(jsonS){  //
             for(var i=0; i<clients.length; i++) {
                 var client = clients[i].ws;
                 if(client.readyState != client.OPEN){ //checking for dead socket
-                    log.error('Client state is ' + client.readyState+' that is unresponsive');
+                    //log.error('Client state is ' + client.readyState+' that is unresponsive');
                 }
                 else{
                     //log.info('client [%s]: %s', clients[i].id, jsonS);
@@ -227,4 +255,74 @@ setInterval(function() {
      // }
   });
  }, 2000);
+
+/******************************
+*function: attachChannels()
+*
+*logic: it attaches the apikeys to their channel ids
+*so that their feeds can be updated on the fly
+*
+*/
+function attachChannels(){
+      var query='Select api_key, channel_id from api_keys';
+      thingspeak.query(query,function(err,rows,fields){
+      if(err)
+        log.error('Error in checking apikeys, thingspeak, '+err);
+      else{
+        for (var j=0;j<rows.length;j++)//going through all the macid
+        {
+            log.info("attaching apikey for channel id "+rows[j].channel_id)
+            client.attachChannel(rows[j].channel_id, { writeKey:rows[j].api_key});
+        }
+      
+      }
+  });
+}
+
+/******************************
+*function: attachChannel(name)
+*input: takes channel name
+*logic: attaches apikey to the newly added channel id
+*
+*/
+function attachChannel(name){
+      var query='Select channel_id from channels where name='+name;
+      findChannel(name, function(channel_Id){//updating the thingspeak feed
+              
+            var query='Select api_key from api_keys where channel_id='+channel_Id;  //findapikey
+            thingspeak.query(query,function(err,rows,fields){
+              if(err)
+              log.error('Error in checking apikey, thingspeak, '+err);
+              else{
+                  client.attachChannel(channel_Id, { writeKey:rows[0].api_key});
+                  log.info("Apikey "+rows[0].api_key+" attached to channel id "+channel_Id);
+              }
+
+            });
+
+      });
+}
+
+/******************************
+*function: findChannel(name, callback)
+*input: takes channel name
+*output; callback, returns the concerend channel id
+*logic: finds channel id by the channel name, it will be used for 
+*updating the concerend channel id feed
+*
+*/
+function findChannel(name, callback){
+    var query='Select id from channels where name='+name;
+    thingspeak.query(query,function(err,rows,fields){
+      if(err)
+        log.error('Error in finding channel id, thingspeak, '+err);
+      else{
+        //log.info('Channel id  ',rows[0].id," for sensor ",name);
+        if(rows.length>0)
+          callback(rows[0].id);
+        else
+          callback(0);//no id found
+      }
+  });
+}
 
