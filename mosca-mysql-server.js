@@ -270,7 +270,7 @@ server.on('published', function(packet) {
                   log.info('Published 3 to '+batmacid);
                   mqttclient.end();
                   findChannel(batmacid, function(channel_Id){//updating the thingspeak feed
-                      TSclient.updateChannel(channel_Id, { "field1":msg,"field2":(count+1)}, function(err, resp) {
+                      TSclient.updateChannel(channel_Id, { "field1":parseInt(msg),"field2":(count+1)}, function(err, resp) {
                       if (!err && resp > 0) {
                           log.info('Thingspeak feed update successfully for channel id '+channel_Id);
                       }
@@ -588,7 +588,7 @@ function attachChannels(){
         for (var j=0;j<rows.length;j++)//going through all the macid
         {
             log.info("attaching apikey for channel id "+rows[j].channel_id)
-            client.attachChannel(rows[j].channel_id, { writeKey:rows[j].api_key});
+            TSclient.attachChannel(rows[j].channel_id, { writeKey:rows[j].api_key});
         }
       
       }
@@ -629,15 +629,18 @@ function attachChannel(name){
 *
 */
 function findChannel(name, callback){
-  log.info("macid "+name);
+  //log.info("macid "+name);
     var query='Select id from channels where name=\''+name+'\'';
     thingspeak.query(query,function(err,rows,fields){
       if(err)
         log.error('Error in finding channel id, thingspeak, '+err);
       else{
-        //log.info('Channel id  ',rows[0].id," for sensor ",name);
-        if(rows.length>0)
+        //log.info('Channel id ',rows[0].id," for sensor ",name);
+        if(rows.length>0){
+		//log.info(123132);
           callback(rows[0].id);
+
+}
         else
           callback(0);//no id found
       }
