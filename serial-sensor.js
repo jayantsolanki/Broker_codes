@@ -2,7 +2,7 @@ var env = require('./settings');//importing settings file, environment variables
 /**************thingSpeak client**************/
 var ThingSpeakClient = require('thingspeakclient');
 var client = new ThingSpeakClient({
-  server:'http://0.0.0.0:3000',
+  server:'http://10.129.139.139:3000',
   updateTimeout:20000
 });
 
@@ -55,7 +55,7 @@ var connection = mysql.createConnection({
   database : env.database
 });
 var thingspeak = mysql.createConnection({ //for thingspeak
-  host     : env.localhost,
+  host     : env.mhost2,
   user     : env.user,
   password : env.password,
   database : env.database2//thingspeak
@@ -264,7 +264,7 @@ setInterval(function() {
 *
 */
 function attachChannels(){
-      var query='Select api_key, channel_id from api_keys';
+      var query='Select api_key, channel_id from api_keys where write_flag=1';
       thingspeak.query(query,function(err,rows,fields){
       if(err)
         log.error('Error in checking apikeys, thingspeak, '+err);
@@ -289,15 +289,16 @@ function attachChannel(name){
       var query='Select channel_id from channels where name='+name;
       findChannel(name, function(channel_Id){//updating the thingspeak feed
               
-            var query='Select api_key from api_keys where channel_id='+channel_Id;  //findapikey
+            var query='Select api_key from api_keys where write_flag=1 and channel_id='+channel_Id;  //findapikey
             thingspeak.query(query,function(err,rows,fields){
-              if(err)
-              log.error('Error in checking apikey, thingspeak, '+err);
-              else{
-                  client.attachChannel(channel_Id, { writeKey:rows[0].api_key});
-                  log.info("Apikey "+rows[0].api_key+" attached to channel id "+channel_Id);
-              }
-
+				if(rows.length>0){
+		          if(err)
+		          log.error('Error in checking apikey, thingspeak, '+err);
+		          else{
+		              client.attachChannel(channel_Id, { writeKey:rows[0].api_key});
+		              log.info("Apikey "+rows[0].api_key+" attached to channel id "+channel_Id);
+		          }
+				}
             });
 
       });
