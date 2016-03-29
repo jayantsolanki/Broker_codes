@@ -3,7 +3,7 @@ var env = require('./settings');//importing settings file, environment variables
 /**************thingSpeak client**************/
 var ThingSpeakClient = require('thingspeakclient');
 var TSclient = new ThingSpeakClient({
-  server:'http://0.0.0.0:3000',
+  server:'http://10.129.28.181:3000',
   updateTimeout:20000
 });
 
