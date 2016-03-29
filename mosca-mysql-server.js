@@ -3,7 +3,7 @@ var env = require('./settings');//importing settings file, environment variables
 /**************thingSpeak client**************/
 var ThingSpeakClient = require('thingspeakclient');
 var TSclient = new ThingSpeakClient({
-  server:'http://10.129.28.181:3000',
+  server:'http://10.129.139.139:3000',
   updateTimeout:20000
 });
 
@@ -77,7 +77,7 @@ var connection = mysql.createConnection({
   database : env.database
 });
 var thingspeak = mysql.createConnection({ //for thingspeak
-  host     : env.localhost,
+  host     : env.mhost2,
   user     : env.user,
   password : env.password,
   database : env.database2//thingspeak
@@ -120,6 +120,7 @@ var server = new mosca.Server(settings);
 //device discovery
 server.on('clientConnected', function(client) {
     var val=client.id;
+	
     //var date = new Date();
    // if(val!='M-O-S-C-A'){ //do not enter client id of server
       var post  = {macid: val};
@@ -237,6 +238,7 @@ server.on('published', function(packet) {
   //if(true){ //this could be improved
   var batmacid=topic.substring(4,21);
   //console.log('Mac id publsihed '+batmacid);
+// console.log("Macid check is "+regex.test(batmacid));
   var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
   if(regex.test(batmacid)){ //check if valid macid there
 
@@ -268,7 +270,7 @@ server.on('published', function(packet) {
                   log.info('Published 3 to '+batmacid);
                   mqttclient.end();
                   findChannel(batmacid, function(channel_Id){//updating the thingspeak feed
-                      TSclient.updateChannel(channel_Id, { "field1":msg,"field2":(count+1)}, function(err, resp) {
+                      TSclient.updateChannel(channel_Id, { "field1":parseInt(msg),"field2":(count+1)}, function(err, resp) {
                       if (!err && resp > 0) {
                           log.info('Thingspeak feed update successfully for channel id '+channel_Id);
                       }
@@ -297,6 +299,7 @@ function setup() {
  // server.authorizeSubscribe = authorizeSubscribe;
  
   //var currenttime=date.getTime()
+	attachChannels();//attaching the chaneels with their API write keys
   var tasks = "select * from tasks";
   var minutes = 1, the_interval = 2000; //set time here, every two seconds below code is repeated
   var date = new Date();
@@ -533,7 +536,7 @@ wss.on('connection', function(ws) {
   wscon=ws;
   var client_uuid=uuid.v4();
   clients.push({"id": client_uuid, "ws": wscon});//adds client detail
-  log.info('client [%s] connected',client_uuid);
+ // log.info('client [%s] connected',client_uuid);
   
   wscon.on('message', function(message) {
     var response = JSON.parse(message);
@@ -544,11 +547,12 @@ wss.on('connection', function(ws) {
   });
 
   wscon.on('close', function() {
-      log.info("web socket connection closed ",client_uuid);
+    //  log.info("web socket connection closed ",client_uuid);
       wscon=null;
   });
 });
 
+//////////////////////////////////
 
 /******************broadcast*****************/
 function sendAll(jsonS){  //
@@ -568,7 +572,6 @@ function sendAll(jsonS){  //
       }
     }
 }
-
 /******************************
 *function: attachChannels()
 *
@@ -577,7 +580,7 @@ function sendAll(jsonS){  //
 *
 */
 function attachChannels(){
-      var query='Select api_key, channel_id from api_keys';
+      var query='Select api_key, channel_id from api_keys where write_flag=1';
       thingspeak.query(query,function(err,rows,fields){
       if(err)
         log.error('Error in checking apikeys, thingspeak, '+err);
@@ -585,7 +588,7 @@ function attachChannels(){
         for (var j=0;j<rows.length;j++)//going through all the macid
         {
             log.info("attaching apikey for channel id "+rows[j].channel_id)
-            client.attachChannel(rows[j].channel_id, { writeKey:rows[j].api_key});
+            TSclient.attachChannel(rows[j].channel_id, { writeKey:rows[j].api_key});
         }
       
       }
@@ -602,15 +605,16 @@ function attachChannel(name){
       var query='Select channel_id from channels where name=\''+name+'\'';
       findChannel(name, function(channel_Id){//updating the thingspeak feed
               
-            var query='Select api_key from api_keys where channel_id='+channel_Id;  //findapikey
+            var query='Select api_key from api_keys where write_flag=1 and channel_id='+channel_Id;  //findapikey
             thingspeak.query(query,function(err,rows,fields){
-              if(err)
-              log.error('Error in checking apikey, thingspeak, '+err);
-              else{
-                  TSclient.attachChannel(channel_Id, { writeKey:rows[0].api_key});
-                  log.info("Apikey "+rows[0].api_key+" attached to channel id "+channel_Id);
-              }
-
+				if(rows.length>0){
+				      if(err)
+				      log.error('Error in checking apikey, thingspeak, '+err);
+				      else{
+				          TSclient.attachChannel(channel_Id, { writeKey:rows[0].api_key});
+				          log.info("Apikey "+rows[0].api_key+" attached to channel id "+channel_Id);
+				      }
+					}
             });
 
       });
@@ -625,15 +629,18 @@ function attachChannel(name){
 *
 */
 function findChannel(name, callback){
-  log.info("macid "+name);
+  //log.info("macid "+name);
     var query='Select id from channels where name=\''+name+'\'';
     thingspeak.query(query,function(err,rows,fields){
       if(err)
         log.error('Error in finding channel id, thingspeak, '+err);
       else{
-        //log.info('Channel id  ',rows[0].id," for sensor ",name);
-        if(rows.length>0)
+        //log.info('Channel id ',rows[0].id," for sensor ",name);
+        if(rows.length>0){
+		//log.info(123132);
           callback(rows[0].id);
+
+}
         else
           callback(0);//no id found
       }
