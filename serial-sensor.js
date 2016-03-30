@@ -47,19 +47,21 @@ var log = new Logger({name:'Serial-Sensor',
 /////////
 ///mysql
 var mysql      = require('mysql');
-///
-var connection = mysql.createConnection({
+///mysql
+var localdb_config={
   host     : env.localhost,
   user     : env.user,
   password : env.password,
   database : env.database
-});
-var thingspeak = mysql.createConnection({ //for thingspeak
+}
+var thingspeak_config={ //for thingspeak
   host     : env.mhost2,
   user     : env.user,
   password : env.password,
   database : env.database2//thingspeak
-});
+}
+var connection = mysql.createConnection(localdb_config);
+var thingspeak = mysql.createConnection(thingspeak_config);
 connection.connect();//general
 thingspeak.connect();//thingspeak
 //configuration ended
@@ -327,3 +329,78 @@ function findChannel(name, callback){
   });
 }
 
+/******************************
+*function: thingspeakDisconnect()
+*input: none
+*output; return new connection to mysql db
+*logic: check if connection is lost, then tries to connect again, for handling thingspeak connection
+*
+*********************************/
+function thingspeakDisconnect() {
+  thingspeak = mysql.createConnection(thingspeak_config); // Recreate the connection, since
+                                                  // the old one cannot be reused.
+
+  thingspeak.connect(function(err) {              // The server is either down
+    if(err) {                                     // or restarting (takes a while sometimes).
+     //log.error('error when connecting to db:', err);
+      setTimeout(thingspeakDisconnect, 2000); //introduce a delay before attempting to reconnect,
+    }                                     // to avoid a hot loop, and to allow our node script to
+  });                                     // process asynchronous requests in the meantime.
+                                          // If you're also serving http, display a 503 error.
+  thingspeak.on('error', function(err) {
+    //log.error('db error', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+      thingspeakDisconnect();                         // lost due to either server restart, or a
+    } else {                                      // connnection idle timeout (the wait_timeout
+      throw err;                                  // server variable configures this)
+    }
+  });
+}
+
+
+//check if connection has fallen then to this, error caching
+thingspeak.on('error', function(err) {
+    log.error('thingspeak db error', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+      thingspeakDisconnect();                         // lost due to either server restart, or a
+    } else {                                      // connnection idle timeout (the wait_timeout
+      throw err;                                  // server variable configures this)
+}
+});
+
+/******************************
+*function: localdbDisconnect()
+*input: none
+*output; return new connection to mysql db
+*logic: check if connection is lost, then tries to connect again, for handling localdb connection
+*
+*********************************/
+function localdbDisconnect() {
+  connection = mysql.createConnection(localdb_config); // Recreate the connection, since
+                                                  // the old one cannot be reused.
+
+  connection.connect(function(err) {              // The server is either down
+    if(err) {                                     // or restarting (takes a while sometimes).
+     //log.error('error when connecting to db:', err);
+      setTimeout(localdbDisconnect, 2000); //introduce a delay before attempting to reconnect,
+    }                                     // to avoid a hot loop, and to allow our node script to
+  });                                     // process asynchronous requests in the meantime.
+                                          // If you're also serving http, display a 503 error.
+  connection.on('error', function(err) {
+    //log.error('db error', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+      localdbDisconnect();                         // lost due to either server restart, or a
+    } else {                                      // connnection idle timeout (the wait_timeout
+      throw err;                                  // server variable configures this)
+    }
+  });
+}
+
+connection.on('error', function(err) {
+    log.error('db error', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+      localdbDisconnect();                         // lost due to either server restart, or a
+    } else {                                      // connnection idle timeout (the wait_timeout
+      throw err;                                  // server variable configures this)
+    }
+  });
