@@ -126,15 +126,32 @@ serialPort.on("open", function () {
            }
 
            else{
-               log.info('Device '+post.macid+' sent new data');
-            var devdis='UPDATE devices SET status=1, seen= now() where status in (0,2) and macid=\''+post.macid+'\'';
-             connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
-                if (err) 
-                  log.error(err);
-               // else
-                 // log.info('Device '+post.macid+' is online');
-            
-              });
+             log.info('Device '+post.macid+' sent new data');
+            //var devdis='UPDATE devices SET status=1, seen= now() where status in (0,2) and macid=\''+post.macid+'\'';
+             deviceStatus(post.macid, function(status,row){
+                if(status==0){//insert only if the last row for that device was vice versa
+                  var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',1, DEFAULT)';
+                  connection.query(devdis, function(err, rows, fields) { //update the table //query3
+                    if (err)
+                      log.error("MYSQL ERROR "+err);
+                    else{
+                      //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                      log.info('Device '+row+' went online');
+                    }
+                  });
+                }
+                else if (status==2){//if no last row exists
+                  var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',1, DEFAULT)';
+                  connection.query(devdis, function(err, rows, fields) { //update the table //query3
+                    if (err)
+                      log.error("MYSQL ERROR "+err);
+                    else{
+                      //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                      log.info('Device '+row+' went online');
+                    }
+                  });
+                }
+             });
              var jsonS={
                      "deviceId":post.macid,
                      "status":1
@@ -247,16 +264,45 @@ function sendAll(jsonS){  //
 
 setInterval(function() { 
   //checking for sensor device is offline or not
-  var checkstatus='Update devices SET status=0, seen=now() where macid in (select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275) and status not in (0,2)';
-  connection.query(checkstatus, function(err, rows, fields) { //update the table 
-      if (err)
-        log.error("MYSQL ERROR "+err);
-    //  else{
-        //console.log('Devices Entry Updated, Set to 0');
-       // log.info('Done checking Sensor device status');
-     // }
+  var query='Select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275';
+  //var checkstatus='Update devices SET status=0, seen=now() where macid in (select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275) and status not in (0,2)';
+  connection.query(query,function(err,rows,fields){//query 1
+    if(rows.length>0){
+          if(err)
+          log.error('Error in getting devid of the sensor, '+err);
+          else{
+            for (var j=0;j<rows.length;j++)//going through all the macid
+            {
+                deviceStatus(rows[j].device_id, function(status,row){
+                    if(status==1){//insert only if the last row for that device was vice versa
+                      var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',0, DEFAULT)';
+                      connection.query(devdis, function(err, rows, fields) { //update the table //query3
+                        if (err)
+                          log.error("MYSQL ERROR "+err);
+                        else{
+                          //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                          log.info('Device '+row+' went offline');
+                        }
+                      });
+                    }
+                    else if (status==2){//if no last row exists
+                      var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',0, DEFAULT)';
+                      connection.query(devdis, function(err, rows, fields) { //update the table //query3
+                        if (err)
+                          log.error("MYSQL ERROR "+err);
+                        else{
+                          //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                          log.info('Device '+row+' went offline');
+                        }
+                      });
+                    }
+                 });                
+            }//end of for loop
+              
+          }
+    }
   });
- }, 2000);
+ }, 10000);
 
 /******************************
 *function: attachChannels()
@@ -293,14 +339,14 @@ function attachChannel(name){
 
             var query='Select api_key from api_keys where write_flag=1 and channel_id='+channel_Id;  //findapikey
             thingspeak.query(query,function(err,rows,fields){
-				if(rows.length>0){
-		          if(err)
-		          log.error('Error in checking apikey, thingspeak, '+err);
-		          else{
-		              client.attachChannel(channel_Id, { writeKey:rows[0].api_key});
-		              log.info("Apikey "+rows[0].api_key+" attached to channel id "+channel_Id);
-		          }
-				}
+      				if(rows.length>0){
+      		          if(err)
+      		          log.error('Error in checking apikey, thingspeak, '+err);
+      		          else{
+      		              client.attachChannel(channel_Id, { writeKey:rows[0].api_key});
+      		              log.info("Apikey "+rows[0].api_key+" attached to channel id "+channel_Id);
+      		          }
+      				}
             });
 
       });
@@ -327,6 +373,30 @@ function findChannel(name, callback){
           callback(0);//no id found
       }
   });
+}
+
+/******************************
+*function: deviceStatus(name, callback)
+*input: takes device_id from feeds
+*output; callback, returns the concerned status of the device in the deviceStatus
+*logic: check if theire is any previous entry of the deivce in deviceStatus table
+*also if the previous entry for the status was1
+*
+*/
+function deviceStatus(row, callback){
+    var devid='Select status from deviceStatus where deviceId=\''+row+'\' order by id desc limit 1';
+    connection.query(devid, function(err, drows, fields) { //update the table //query2
+      if (err)
+        log.error("MYSQL ERROR "+err);
+      else{
+        if(drows.length>0){
+          callback(drows[0].status,row);
+        }
+        else{//if no last row exists
+          callback(2,row);//2 is arbitrary, but should not be 0
+        }
+      }
+    });
 }
 
 /******************************

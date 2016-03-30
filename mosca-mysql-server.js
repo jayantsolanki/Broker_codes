@@ -165,7 +165,8 @@ server.on('clientConnected', function(client) {
           
             else{
               log.info('Device '+post.macid+' reconnected ');
-              var devdis='UPDATE devices SET status=1, seen= now() where status!=2 and macid=\''+post.macid+'\'';
+              //var devdis='UPDATE devices SET status=1, seen= now() where status!=2 and macid=\''+post.macid+'\'';
+              var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+post.macid+'\',1, DEFAULT)';
               connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
                 if (err)
                   log.error("MYSQL ERROR "+err);
@@ -189,7 +190,8 @@ server.on('unsubscribed', function(topic, client) { //checking if the device goe
     var val=client.id;
     //var date = new Date();
     log.info('client unsubscribed', client.id);
-    var offlineq='UPDATE devices SET status=0, seen= now() where status!=2 and macid= \''+client.id.toString()+'\'';
+    //var offlineq='UPDATE devices SET status=0, seen= now() where status!=2 and macid= \''+client.id.toString()+'\'';
+    var offlineq='INSERT INTO deviceStatus VALUES (DEFAULT,\''+client.id.toString()+'\',0, DEFAULT)';
     connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
       if (err) 
         log.error("MYSQL ERROR "+err);
@@ -210,7 +212,8 @@ server.on('clientDisconnected', function( client) { //checking if the device goe
     var val=client.id;
     //var date = new Date();
     log.info('client disconnected', client.id);
-    var offlineq='UPDATE devices SET status=0, seen= now() where status!=2 and macid= \''+client.id.toString()+'\'';
+    //var offlineq='UPDATE devices SET status=0, seen= now() where status!=2 and macid= \''+client.id.toString()+'\'';
+    var offlineq='INSERT INTO deviceStatus VALUES (DEFAULT,\''+client.id.toString()+'\',0, DEFAULT)';
     connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
       if (err) 
         log.error("MYSQL ERROR "+err);
