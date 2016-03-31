@@ -147,7 +147,7 @@ server.on('clientConnected', function(client) {
                     log.error("MYSQL ERROR "+err);
                   else{
                     log.info('New Device found, adding '+post.macid+' into device table');
-                    TSclient.createChannel(1, { 'api_key':env.apiKey,'name':post.macid, 'field1':'batValue', 'field2':'packetID'}, function(err) {
+                    TSclient.createChannel(1, { 'api_key':env.apiKey,'name':post.macid, 'field1':'PbatValue', 'field2':'packetID','field3':'SbatValue'}, function(err) {
                       if (!err) {//channel creation done
                           log.info('New channel created for new Valve: '+post.macid);
                           attachChannel(post.macid);//attaching the channel;
@@ -254,29 +254,44 @@ server.on('published', function(packet) {
     {
       //console.log("I am a battery");
       var msg=packet.payload;
+      var dataout=String(msg);
+      var msgarray=dataout.split(",");//getting strings
+      var type=msgarray[0];//type of esp i.e., relay,, single valve, multiple valve
+      var batP=msgarray[1];//primary battery
+      var batS=msgarray[2];//secondary battery
      // msg=Integer.parseInt(msg);
       //console.log(msg);
+      log.info('Device type is of ',type);
       var count=0;
           connection.query('SELECT packet_id from feeds where device_id=\''+batmacid+'\' ORDER BY packet_id DESC LIMIT 1', function(err, rows, fields) {
             if (!err){
               if(rows.length>0){//check if the macid was present already before
-                //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
-                count=parseInt(rows[0]['packet_id']); //storing last packet id in 
-                var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+msg+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+                  //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
+                  count=parseInt(rows[0]['packet_id']); //storing last packet id in 
+                  if(parseInt(batS)!=0)//check if secondary battery is absent
+                    var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+batP+', '+batS+', NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+                  else
+                    var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+batP+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
                 }
-              else
-              var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+msg+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+              else{
+                  if(parseInt(batS)!=0)//check if secondary battery is absent
+                    var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+batP+', '+batS+', NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+                  else
+                    var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+batP+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+                }
                 connection.query(batquery, function(err, rows, fields) { //insert into the feed table
                 if (err)
                   log.error("MYSQL ERROR "+err);
                 else{
-                  log.info('Battery status inserted for device '+batmacid+' with voltage '+msg);
+                  log.info('Primary Battery status inserted for device '+batmacid+' with voltage '+batP);
+                  if(parseInt(batS)!=0)
+                    log.info('Secondary Battery status inserted for device '+batmacid+' with voltage '+batS);
                   var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
                   mqttpub(mqttclient,batmacid,3); //sending hibernate signal, replacing 2 by 3
                   log.info('Published 3 to '+batmacid);
                   mqttclient.end();
                   findChannel(batmacid, function(channel_Id){//updating the thingspeak feed
-                      TSclient.updateChannel(channel_Id, { "field1":parseInt(msg),"field2":(count+1)}, function(err, resp) {
+                      TSclient.updateChannel(channel_Id, { "field1":parseInt(batP),"field2":(count+1),"field3":parseInt(batS)}, function(err, resp) {
                       if (!err && resp > 0) {
                           log.info('Thingspeak feed update successfully for channel id '+channel_Id);
                       }
