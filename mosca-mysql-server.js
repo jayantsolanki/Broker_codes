@@ -208,7 +208,7 @@ server.on('unsubscribed', function(topic, client) { //checking if the device goe
 });
 
 //
-server.on('clientDisconnected', function( client) { //checking if the device goes disconnect
+/*server.on('clientDisconnected', function( client) { //checking if the device goes disconnect
     var val=client.id;
     //var date = new Date();
     log.info('client disconnected', client.id);
@@ -227,7 +227,7 @@ server.on('clientDisconnected', function( client) { //checking if the device goe
     };
     sendAll(jsonS);//sending  offline status to website
 
-});
+});*/
 //
  
 // fired when a message is received 
@@ -727,3 +727,27 @@ connection.on('error', function(err) {
       throw err;                                  // server variable configures this)
     }
   });
+
+/******************************
+*function: deviceStatus(name, callback)
+*input: takes device_id from feeds
+*output; callback, returns the concerned status of the device in the deviceStatus
+*logic: check if theire is any previous entry of the deivce in deviceStatus table
+*also if the previous entry for the status was1
+*
+*/
+function deviceStatus(row, callback){
+    var devid='Select status from deviceStatus where deviceId=\''+row+'\' order by id desc limit 1';
+    connection.query(devid, function(err, drows, fields) { //update the table //query2
+      if (err)
+        log.error("MYSQL ERROR "+err);
+      else{
+        if(drows.length>0){
+          callback(drows[0].status,row);
+        }
+        else{//if no last row exists
+          callback(2,row);//2 is arbitrary, but should not be 0
+        }
+      }
+    });
+}
