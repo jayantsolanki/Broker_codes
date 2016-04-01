@@ -127,7 +127,7 @@ server.on('clientConnected', function(client) {
     //var date = new Date();
    // if(val!='M-O-S-C-A'){ //do not enter client id of server
       var post  = {macid: val};
-      var check='SELECT EXISTS(SELECT * FROM devices WHERE macid=\''+val+'\') as find';
+      var check='SELECT EXISTS(SELECT * FROM devices WHERE deviceId=\''+val+'\') as find';
       connection.query(check, function(err, rows, fields) {
       //console.log('Inside client connected '+val);
       
@@ -140,14 +140,14 @@ server.on('clientConnected', function(client) {
             //console.log('Mac id is valid? '+regex.test(post.macid));
             if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
               if(regex.test(post.macid))//check if the client id is the macid
-              {
-                var devdis='INSERT INTO devices VALUES (DEFAULT,NULL,\''+post.macid+'\',NULL,2,1, DEFAULT,NULL,NULL)'
+              { //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
+                var devdis='INSERT INTO devices (deviceId, type) VALUES (\''+post.macid+'\',1)'
                 connection.query(devdis, function(err, rows, fields) { //insert into the table 
                   if (err) 
                     log.error("MYSQL ERROR "+err);
                   else{
                     log.info('New Device found, adding '+post.macid+' into device table');
-                    TSclient.createChannel(1, { 'api_key':env.apiKey,'name':post.macid, 'field1':'PbatValue', 'field2':'packetID','field3':'SbatValue'}, function(err) {
+                    /*TSclient.createChannel(1, { 'api_key':env.apiKey,'name':post.macid, 'field1':'PbatValue', 'field2':'SbatValue','field3':'packetID'}, function(err) {
                       if (!err) {//channel creation done
                           log.info('New channel created for new Valve: '+post.macid);
                           attachChannel(post.macid);//attaching the channel;
@@ -156,7 +156,7 @@ server.on('clientConnected', function(client) {
                       {
                         console.log(err)
                       }
-                    });
+                    });*/
                   }
                 });
 
@@ -206,30 +206,6 @@ server.on('unsubscribed', function(topic, client) { //checking if the device goe
    sendAll(jsonS);//sending  offline status to website
 
 });
-
-//
-/*server.on('clientDisconnected', function( client) { //checking if the device goes disconnect
-    var val=client.id;
-    //var date = new Date();
-    log.info('client disconnected', client.id);
-    //var offlineq='UPDATE devices SET status=0, seen= now() where status!=2 and macid= \''+client.id.toString()+'\'';
-    var offlineq='INSERT INTO deviceStatus VALUES (DEFAULT,\''+client.id.toString()+'\',0, DEFAULT)';
-    connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
-      if (err) 
-        log.error("MYSQL ERROR "+err);
-      //else
-        //console.log('Device '+client.id.toString()+' marked disconnected/Offline '+date);
-
-    });
-    var jsonS={
-         "deviceId":val,
-         "status":0
-    };
-    sendAll(jsonS);//sending  offline status to website
-
-});*/
-//
- 
 // fired when a message is received 
 server.on('published', function(packet) {
   //var date = new Date();
@@ -261,7 +237,8 @@ server.on('published', function(packet) {
       var batS=msgarray[2];//secondary battery
      // msg=Integer.parseInt(msg);
       //console.log(msg);
-      log.info('Device type is of ',type);
+      log.info('Device type is of ',type);//new swiches insert goes here
+      newSwitches(batmacid,type);//goes to the function and do the necessary
       var count=0;
           connection.query('SELECT packet_id from feeds where device_id=\''+batmacid+'\' ORDER BY packet_id DESC LIMIT 1', function(err, rows, fields) {
             if (!err){
@@ -764,5 +741,81 @@ function deviceStatus(row, callback){
           callback(2,row);//2 is arbitrary, but should not be 0
         }
       }
+    });
+}
+/******************************
+*function: newSwitches(macId,type)
+*input: takes device_id and type is the signature of the device, 1 valve, 2 valve, and nth valve
+*output; insert new switches if there
+*logic: check if there is any previous entry of the deivce in swiches table
+*
+*/
+function newSwitches(macId,type){
+  var check='SELECT EXISTS(SELECT * FROM switches WHERE deviceId=\''+macId+'\') as find';
+      connection.query(check, function(err, rows, fields) {
+      //console.log('Inside client connected '+val);
+      
+        if (err) 
+        log.error("MYSQL ERROR "+err);
+        else{
+            var find=rows[0]['find'];
+           // console.log('Inside client connected '+find);
+            var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
+            //console.log('Mac id is valid? '+regex.test(post.macid));
+            if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
+              if(regex.test(macId))//check if the client id is the macid
+              { //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
+                var devdis='UPDATE devices SET type='+type+' where deviceId=\''+macId+'\'';
+                connection.query(devdis, function(err, rows, fields) { //insert into the table 
+                  if (err) 
+                    log.error("MYSQL ERROR "+err);
+                  else{
+                    log.info('Device type updated for '+macId+' into device table, type '+type);
+                    if(type==1){//for thingspeak feed
+                      var thingspeakchannelrow={
+                        'api_key' : env.apiKey,
+                        'name'    : macId,
+                        'field1'  :'PbatValue',
+                        'field2'  :'SbatValue',
+                        'field3'  :'packetID'
+                      }
+                      TSclient.createChannel(1, thingspeakchannelrow, function(err) {
+                        if (!err) {//channel creation done
+                            log.info('New channel created for new Valve: '+macId);
+                            attachChannel(macId);//attaching the channel;
+                        }
+                        else
+                        {
+                          console.log(err)
+                        }
+                      });
+                    }
+                    
+                  }
+                });
+                // for creating new switches
+                for(var j=1;j<=type;j++){
+                  insertSwitch(macId,j);
+                }
+              }//closing macid check if clause
+            }
+          }
+      });
+}
+
+/******************************
+*function: insertSwitch(macId, switchId)
+*input: takes device_id and switchId
+*output; creates their respective switches
+*
+*/
+function insertSwitch(macId, switchId){
+    var switches='INSERT INTO switches (deviceId, switchId) VALUES(\''+macId+'\', '+switchId+')';
+    connection.query(switches, function(err, drows, fields) { //Insert into switches table
+      if (err)
+        log.error("Error in creating new switches "+err);
+      else{
+        log.info('Crating entry for DeviceId '+macId+' SwitchId '+switchId);
+        }
     });
 }
