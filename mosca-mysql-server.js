@@ -147,9 +147,9 @@ server.on('clientConnected', function(client) {
                     log.error("MYSQL ERROR "+err);
                   else{
                     log.info('New Device found, adding '+post.macid+' into device table');
-                    log.info('Requesting for more data from device'+post.macid);
+                    log.info('Requesting for more data from device '+post.macid);
                     var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-                    mqttpub(post.macid,0,2);//calling mqttpub for publishing value 2 to all macids
+                    mqttpub(mqttclient,post.macid,0,2);//calling mqttpub for publishing value 2 to all macids
                     mqttclient.end();
                     /*TSclient.createChannel(1, { 'api_key':env.apiKey,'name':post.macid, 'field1':'PbatValue', 'field2':'SbatValue','field3':'packetID'}, function(err) {
                       if (!err) {//channel creation done
@@ -511,7 +511,7 @@ function mqttpub(mqttclient,macid,switchId,action)//method for publishing the me
   if(switchId==0){//for battery
     mqttclient.publish('esp/'+macid, action.toString(), {retain:true, qos: 0});
   }
-  if(switchId<6){
+  if(switchId>0 && switchId<6){
     var command=2*(switchId-1)+action;
     mqttclient.publish('esp/'+macid, command.toString(), {retain:true, qos: 0});//check that the payload is in string
   }
