@@ -147,6 +147,10 @@ server.on('clientConnected', function(client) {
                     log.error("MYSQL ERROR "+err);
                   else{
                     log.info('New Device found, adding '+post.macid+' into device table');
+                    log.info('Requesting for more data from device'+post.macid);
+                    var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                    mqttpub(post.macid,0,2);//calling mqttpub for publishing value 2 to all macids
+                    mqttclient.end();
                     /*TSclient.createChannel(1, { 'api_key':env.apiKey,'name':post.macid, 'field1':'PbatValue', 'field2':'SbatValue','field3':'packetID'}, function(err) {
                       if (!err) {//channel creation done
                           log.info('New channel created for new Valve: '+post.macid);

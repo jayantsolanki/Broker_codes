@@ -105,7 +105,7 @@ serialPort.on("open", function () {
            // console.log('Inside client connected '+find);
            if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
                //var devdis='INSERT INTO devices VALUES (DEFAULT,NULL,\''+post.macid+'\',NULL,2,1, DEFAULT,NULL,\''+res[2]+'\')';
-               var devdis='INSERT INTO devices(deviceId, type) VALUES (\''+post.macid+'\',1)';//table restructured
+               var devdis='INSERT INTO devices(deviceId, type, switches) VALUES (\''+post.macid+'\',2,0)';//table restructured
                 connection.query(devdis, function(err, rows, fields) { //insert into the table 
                   if (err) 
                   log.error(err);
