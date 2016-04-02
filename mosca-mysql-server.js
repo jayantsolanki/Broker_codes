@@ -560,9 +560,18 @@ wss.on('connection', function(ws) {
   
   wscon.on('message', function(message) {
     var response = JSON.parse(message);
-    var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-    mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
-    mqttclient.end();
+    if(response.check!=null)
+    {
+      if(response.device==0)
+      battstatus();
+      log.info('Client requested battery status from ESP devices');
+
+    }
+    else{
+      var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+      mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
+      mqttclient.end();
+    }
     //console.log('message received ', response.deviceId);
   });
 
