@@ -232,7 +232,7 @@ server.on('published', function(packet) {
       var msg=packet.payload;
       var dataout=String(msg);
       var msgarray=dataout.split(",");//getting strings
-      var type=msgarray[0];//type of esp i.e., relay,, single valve, multiple valve
+      var type=msgarray[0];//type of esp i.e., relay,, single valve, multiple valve, no of switches
       var batP=msgarray[1];//primary battery
       var batS=msgarray[2];//secondary battery
      // msg=Integer.parseInt(msg);
@@ -264,7 +264,7 @@ server.on('published', function(packet) {
                   if(parseInt(batS)!=0)
                     log.info('Secondary Battery status inserted for device '+batmacid+' with voltage '+batS);
                   var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-                  mqttpub(mqttclient,batmacid,3); //sending hibernate signal, replacing 2 by 3
+                  mqttpub(mqttclient,batmacid,0,3); //sending hibernate signal, replacing 2 by 3
                   log.info('Published 3 to '+batmacid);
                   mqttclient.end();
                   findChannel(batmacid, function(channel_Id){//updating the thingspeak feed
@@ -318,8 +318,9 @@ function setup() {
             start=rows[i]['start'];
             stop=rows[i]['stop'];
             action=rows[i]['action'];
-            item=rows[i]['item'];
-            macid=rows[i]['macid'];
+            groupId=rows[i]['groupId'];
+            macid=rows[i]['deviceId'];
+            switchId=rows[i]['switchId'];
             type=rows[i]['type'];
             var date=new Date();
             currenttime=date.getHours()*100+date.getMinutes();
@@ -368,14 +369,14 @@ function setup() {
                 
 
                // var devices = "select * from devices";
-                if(item!=null)
-                  var devquery='Select macid from devices left join groups on devices.group=groups.id where groups.name=\"'+item+'\" and devices.type=1';
+                if(groupId!=null)
+                  var devquery='Select deviceId, switchId from switches where switches.groupId='+groupId+'';//code modified here, removed the ambiguous group name with the group id
                // else
                   //var devquery='Select macid from devices where devices.macid=\"'+macid+'\"'; //check this code, it is modifiable, for manual switch on/off
                
                 connection.query(devquery, function(err, devs){
                   if(err) {
-                    log.error("MYSQL ERROR "+err);
+                    log.error("Unable to get switches list "+err);
                   }
                   else
                   {
@@ -384,15 +385,15 @@ function setup() {
                       log.info("Scheduled task started for switching on the Valves");
                       for (var j=0;j<devs.length;j++)//
                       {
-                          log.info("Switched on "+devs[j].macid);
-                          mqttpub(mqttclient,devs[j].macid,1);
+                          log.info("Switched on Device "+devs[j].deviceId+" SwitchId "+devs[j].switchId);
+                          mqttpub(mqttclient,devs[j].deviceId,devs[j].switchId,1);//code modified here, added provision for the switches
                       }
                       mqttclient.end();
 
                   }
                 });
                 
-                  var upd1={action:0};
+                  var upd1={action:0};//invert the status on the task, to be switched off next time
                   connection.query('UPDATE tasks SET ? where id='+id+'',upd1, function(err, rows, fields) { //update into the table 
                   if (err)
                    log.error("MYSQL ERROR "+err);
@@ -401,14 +402,14 @@ function setup() {
                   });
 
 
-                var upd2={action:1};
-                if(item!=null)
-                  var query='UPDATE devices SET ? where devices.group in (Select * from (Select devices.group from devices where devices.group in (Select id from groups where groups.name=\"'+item+'\"))tmp)';
+                var upd2={action:1};//update the running status on the switches table, seeting it to running
+                if(groupId!=null)//if task was created on group basis n ot the manual switching on the valves
+                  var query='UPDATE switches SET ? where switches.groupId in (Select * from (Select switches.groupId FROM switches where switches.groupId ='+groupId+')tmp)';
                 else
-                  var query='UPDATE devices SET ? where devices.macid='+macid+'';// action =1 means valve is currently on
+                  var query='UPDATE switches SET ? where switches.deviceId=\''+macid+'\' and switches.switchId='+switchId+'';// action =1 means valve is currently on
                 connection.query(query,upd2, function(err, rows, fields) { //update the table 
                 if (err)
-                  log.error("MYSQL ERROR "+err);
+                  log.error("MYSQL ERROR in updating the running status of the valves "+err);
                   //console.log(' Devices Update failed, error:  '+err+' '+date);
                 else{
                   //console.log('Devices Entry Updated, Set to 1');
@@ -428,10 +429,10 @@ function setup() {
 
               if(currenttime>=stop && action==0)//to switch on the valves
               {
-                if(item!=null)
-                  var devquery='Select macid from devices left join groups on devices.group=groups.id where groups.name=\"'+item+'\ and devices.type=1"';
+                if(groupId!=null)
+                  var devquery='Select deviceId, switchId from switches where switches.groupId='+groupId+'';
                 else
-                  var devquery='Select macid from devices where devices.macid=\"'+macid+'\"';
+                  var devquery='Select deviceId, switchId from switches where switches.deviceId=\"'+macid+'\" and switchId='+switchId+'';
                 connection.query( devquery, function(err, devs){
                   if(err) {
                     log.error("MYSQL ERROR "+err);
@@ -443,8 +444,8 @@ function setup() {
                    log.info("Scheduled task started for switching off the valves");
                    for (var j=0;j<devs.length;j++)// publishing the message
                    {
-                        log.info("Switched off "+devs[j].macid)
-                        mqttpub(mqttclient,devs[j].macid,0);
+                        log.info("Switched off "+devs[j].deviceId+" SwitchId "+devs[j].switchId)
+                        mqttpub(mqttclient,devs[j].deviceId,devs[j].switchId,0);//modified for inluding the relays and the raavan
                    }
                    mqttclient.end();
                   }
@@ -470,14 +471,14 @@ function setup() {
                   });
                 }
                 var upd2={action:0};
-                if(item!=null)
-                  var query='UPDATE devices SET ? where devices.group in (Select * from (Select devices.group from devices where devices.group in (Select id from groups where groups.name=\"'+item+'\"))tmp)';//group valves are selected
+                if(groupId!=null)
+                  var query='UPDATE switches SET ? where switches.groupId in (Select * from (Select switches.groupId FROM switches where switches.groupId ='+groupId+')tmp)';//group valves are selected
                 else
-                  var query='UPDATE devices SET ? where devices.macid=\''+macid+'\''; // if individual valve is scheduled
+                  var query='UPDATE switches SET ? where switches.deviceId=\''+macid+'\' and switches.switchId='+switchId+'';// action =0 means valve is currently off, for individual valve
                 //console.log(macid);
                 connection.query(query,upd2, function(err, rows, fields) { //update the table 
                 if (err)
-                  log.error("MYSQL ERROR "+err);
+                  log.error("MYSQL ERROR in updating the running status of the valves "+err);
                 else{
                   //console.log('Devices Entry Updated, Set to 0');
                   log.info('Done executing the tasks');
@@ -501,20 +502,37 @@ function setup() {
 }, the_interval);
 }
 //////////////
-function mqttpub(mqttclient,macid,action)//method for publishing the message to esp module
+function mqttpub(mqttclient,macid,switchId,action)//method for publishing the message to esp module, action=0,1,2
 {
-   mqttclient.publish('esp/'+macid, action.toString(), {retain:true, qos: 0});
-   var jsonS={
-         "deviceId":macid,
-         "action":action
-   };
-   sendAll(jsonS);//sending button status to all device
+  if(switchId==0){//for battery
+    mqttclient.publish('esp/'+macid, action.toString(), {retain:true, qos: 0});
+  }
+  if(switchId<6){
+    var command=2*(switchId-1)+action;
+    mqttclient.publish('esp/'+macid, command.toString(), {retain:true, qos: 0});//check that the payload is in string
+  }
+  if(switchId>=6 && switchId<=18){//concession for the RAAVAN, total support upto 13 valves
+    var count=2*(switchId-6)+action;
+    var com=String.fromCharCode('A'.charCodeAt() + count);
+    mqttclient.publish('esp/'+macid, com.toString(), {retain:true, qos: 0});//check that the payload is in string
+  }
+  if(switchId>=19 && switchId<=31){ //support upto 13 more valves, overall total 31 valves
+    var count=2*(switchId-19)+action;
+    var com=String.fromCharCode('A'.charCodeAt() + count);
+    mqttclient.publish('esp/'+macid, com.toString(), {retain:true, qos: 0});//check that the payload is in string
+  }
+  var jsonS={
+       "deviceId":macid,
+       "switchId":switchId,
+       "action"  :action
+  };
+  sendAll(jsonS);//sending button status to all device
 }
 
 // battery status check
 function battstatus()
 {
-  var query='Select macid from devices where type=\'1\'';
+  var query='Select deviceId from devices where type=1';
   connection.query(query,function(err,rows,fields){
     if(err)
       log.error('Error in checking battery status, '+err);
@@ -522,8 +540,8 @@ function battstatus()
       var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
       for (var j=0;j<rows.length;j++)//going through all the macid
       {
-          log.info("Checking battery status for device "+rows[j].macid)
-          mqttpub(mqttclient,rows[j].macid,2);//calling mqttpub for publishing value 2 to all macids
+          log.info("Checking battery status for device "+rows[j].deviceId)
+          mqttpub(mqttclient,rows[j].deviceId,0,2);//calling mqttpub for publishing value 2 to all macids
       }
       mqttclient.end();
     }
@@ -539,7 +557,7 @@ wss.on('connection', function(ws) {
   wscon.on('message', function(message) {
     var response = JSON.parse(message);
     var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-    mqttpub(mqttclient,response.deviceId,response.payload);
+    mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
     mqttclient.end();
     //console.log('message received ', response.deviceId);
   });
@@ -765,7 +783,7 @@ function newSwitches(macId,type){
             if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
               if(regex.test(macId))//check if the client id is the macid
               { //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
-                var devdis='UPDATE devices SET type='+type+' where deviceId=\''+macId+'\'';
+                var devdis='UPDATE devices SET switches='+type+' where deviceId=\''+macId+'\'';
                 connection.query(devdis, function(err, rows, fields) { //insert into the table 
                   if (err) 
                     log.error("MYSQL ERROR "+err);
@@ -815,7 +833,7 @@ function insertSwitch(macId, switchId){
       if (err)
         log.error("Error in creating new switches "+err);
       else{
-        log.info('Crating entry for DeviceId '+macId+' SwitchId '+switchId);
+        log.info('Creating entry for DeviceId '+macId+' SwitchId '+switchId);
         }
     });
 }

@@ -95,7 +95,7 @@ serialPort.on("open", function () {
     var post  = {macid: res[0]};
     //if(res[2].substring()){ //check if the data is corrupt or not by checking the third parameter, string
 
-      connection.query('SELECT EXISTS(SELECT * FROM devices WHERE ?) as find',post, function(err, rows, fields) {
+      connection.query('SELECT EXISTS(SELECT * FROM devices WHERE deviceId=\''+post.macid+'\') as find', function(err, rows, fields) {
       //console.log('Inside client connected '+val);
       
         if (err) 
@@ -104,7 +104,8 @@ serialPort.on("open", function () {
             var find=rows[0]['find'];
            // console.log('Inside client connected '+find);
            if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
-               var devdis='INSERT INTO devices VALUES (DEFAULT,NULL,\''+post.macid+'\',NULL,2,1, DEFAULT,NULL,\''+res[2]+'\')';
+               //var devdis='INSERT INTO devices VALUES (DEFAULT,NULL,\''+post.macid+'\',NULL,2,1, DEFAULT,NULL,\''+res[2]+'\')';
+               var devdis='INSERT INTO devices(deviceId, type) VALUES (\''+post.macid+'\',1)';//table restructured
                 connection.query(devdis, function(err, rows, fields) { //insert into the table 
                   if (err) 
                   log.error(err);
