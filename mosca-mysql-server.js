@@ -508,7 +508,6 @@ function setup() {
 //////////////
 function mqttpub(mqttclient,macid,switchId,action)//method for publishing the message to esp module, action=0,1,2
 {
-  console.log('Hello');
   if(switchId==0){//for battery
     mqttclient.publish('esp/'+macid, action.toString(), {retain:true, qos: 0});
   }
@@ -560,7 +559,6 @@ wss.on('connection', function(ws) {
  // log.info('client [%s] connected',client_uuid);
   
   wscon.on('message', function(message) {
-    console.log('Hello23');
     var response = JSON.parse(message);
     if(response.check!=null)
     {
@@ -570,7 +568,6 @@ wss.on('connection', function(ws) {
 
     }
     else{
-      console.log('Hello2');
       var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
       mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
       mqttclient.end();
