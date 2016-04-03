@@ -398,7 +398,7 @@ function setup() {
                 });
                 
                   var upd1={action:0};//invert the status on the task, to be switched off next time
-                  connection.query('UPDATE tasks SET ? where id='+id+'',upd1, function(err, rows, fields) { //update into the table 
+                  connection.query('UPDATE tasks SET action='+0+', updated_at=now() where id='+id+'',function(err, rows, fields) { //update into the table 
                   if (err)
                    log.error("MYSQL ERROR "+err);
                  //else
@@ -408,10 +408,10 @@ function setup() {
 
                 var upd2={action:1};//update the running status on the switches table, seeting it to running
                 if(groupId!=null)//if task was created on group basis n ot the manual switching on the valves
-                  var query='UPDATE switches SET ? where switches.groupId in (Select * from (Select switches.groupId FROM switches where switches.groupId ='+groupId+')tmp)';
+                  var query='UPDATE switches SET action='+1+', updated_at=now() where switches.groupId in (Select * from (Select switches.groupId FROM switches where switches.groupId ='+groupId+')tmp)';
                 else
-                  var query='UPDATE switches SET ? where switches.deviceId=\''+macid+'\' and switches.switchId='+switchId+'';// action =1 means valve is currently on
-                connection.query(query,upd2, function(err, rows, fields) { //update the table 
+                  var query='UPDATE switches SET action='+1+', updated_at=now() where switches.deviceId=\''+macid+'\' and switches.switchId='+switchId+'';// action =1 means valve is currently on
+                connection.query(query,function(err, rows, fields) { //update the table 
                 if (err)
                   log.error("MYSQL ERROR in updating the running status of the valves "+err);
                   //console.log(' Devices Update failed, error:  '+err+' '+date);
@@ -467,7 +467,7 @@ function setup() {
                 else
                 {
                   var upd1={action:1};
-                  connection.query('UPDATE tasks SET ? where id='+id+'',upd1, function(err, rows, fields) { //update the table 
+                  connection.query('UPDATE tasks SET action='+1+', updated_at=now() where id='+id+'', function(err, rows, fields) { //update the table 
                   if (err)
                     log.error('Update failed');
                   //else
@@ -476,11 +476,11 @@ function setup() {
                 }
                 var upd2={action:0};
                 if(groupId!=null)
-                  var query='UPDATE switches SET ? where switches.groupId in (Select * from (Select switches.groupId FROM switches where switches.groupId ='+groupId+')tmp)';//group valves are selected
+                  var query='UPDATE switches SET action='+0+', updated_at=now() where switches.groupId in (Select * from (Select switches.groupId FROM switches where switches.groupId ='+groupId+')tmp)';//group valves are selected
                 else
-                  var query='UPDATE switches SET ? where switches.deviceId=\''+macid+'\' and switches.switchId='+switchId+'';// action =0 means valve is currently off, for individual valve
+                  var query='UPDATE switches SET action='+0+', updated_at=now() where switches.deviceId=\''+macid+'\' and switches.switchId='+switchId+'';// action =0 means valve is currently off, for individual valve
                 //console.log(macid);
-                connection.query(query,upd2, function(err, rows, fields) { //update the table 
+                connection.query(query, function(err, rows, fields) { //update the table 
                 if (err)
                   log.error("MYSQL ERROR in updating the running status of the valves "+err);
                 else{
@@ -508,6 +508,7 @@ function setup() {
 //////////////
 function mqttpub(mqttclient,macid,switchId,action)//method for publishing the message to esp module, action=0,1,2
 {
+  console.log('Hello');
   if(switchId==0){//for battery
     mqttclient.publish('esp/'+macid, action.toString(), {retain:true, qos: 0});
   }
@@ -559,6 +560,7 @@ wss.on('connection', function(ws) {
  // log.info('client [%s] connected',client_uuid);
   
   wscon.on('message', function(message) {
+    console.log('Hello23');
     var response = JSON.parse(message);
     if(response.check!=null)
     {
@@ -568,6 +570,7 @@ wss.on('connection', function(ws) {
 
     }
     else{
+      console.log('Hello2');
       var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
       mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
       mqttclient.end();
