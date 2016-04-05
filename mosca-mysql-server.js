@@ -302,7 +302,7 @@ function setup() {
  
   //var currenttime=date.getTime()
 	attachChannels();//attaching the chaneels with their API write keys
-  var tasks = "select * from tasks";
+  var tasks = "select * from tasks where active!=3"; //only non disabled task
   var minutes = 1, the_interval = 2000; //set time here, every two seconds below code is repeated
   var date = new Date();
   log.info('Mosca server is up and running on '+env.mhost+':'+env.mport);
@@ -398,7 +398,7 @@ function setup() {
                 });
                 
                   var upd1={action:0};//invert the status on the task, to be switched off next time
-                  connection.query('UPDATE tasks SET action='+0+', updated_at=now() where id='+id+'',function(err, rows, fields) { //update into the table 
+                  connection.query('UPDATE tasks SET action='+0+',active=1, updated_at=now() where id='+id+'',function(err, rows, fields) { //update into the table 
                   if (err)
                    log.error("MYSQL ERROR "+err);
                  //else
@@ -467,7 +467,7 @@ function setup() {
                 else
                 {
                   var upd1={action:1};
-                  connection.query('UPDATE tasks SET action='+1+', updated_at=now() where id='+id+'', function(err, rows, fields) { //update the table 
+                  connection.query('UPDATE tasks SET action='+1+', active=0, updated_at=now() where id='+id+'', function(err, rows, fields) { //update the table 
                   if (err)
                     log.error('Update failed');
                   //else
