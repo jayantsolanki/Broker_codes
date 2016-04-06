@@ -240,7 +240,7 @@ serialPort.on("open", function () {
     }
     else if(res[2]==='bm')
     {
-      var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3, field4) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\',\''+res[6]+'\')';//only battery and moisture
+      var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3, field4) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\',\''+res[4]+'\')';//only battery and moisture
       connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
         if (err)
          log.error('Error in inserting serial data, error: '+err+', time: '+date);
@@ -252,7 +252,7 @@ serialPort.on("open", function () {
          "packetNo":res[1],
          "deviceType":res[2],
          "batValue":res[3],
-         "moistValue":res[6]
+         "moistValue":res[4]
       };
       sendAll(jsonS);//to websocket client
       findChannel(res[0], function(channel_Id){//updating the thingspeak feed
