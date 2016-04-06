@@ -239,26 +239,27 @@ server.on('published', function(packet) {
       var type=msgarray[0];//type of esp i.e., relay,, single valve, multiple valve, no of switches
       var batP=msgarray[1];//primary battery
       var batS=msgarray[2];//secondary battery
+      //add sensor capabilty here in future
      // msg=Integer.parseInt(msg);
       //console.log(msg);
       log.info('Device type is of ',type);//new swiches insert goes here
       newSwitches(batmacid,type);//goes to the function and do the necessary
       var count=0;
-          connection.query('SELECT packet_id from feeds where device_id=\''+batmacid+'\' ORDER BY packet_id DESC LIMIT 1', function(err, rows, fields) {
+          connection.query('SELECT field1 from feeds where device_id=\''+batmacid+'\' ORDER BY field1 DESC LIMIT 1', function(err, rows, fields) {
             if (!err){
               if(rows.length>0){//check if the macid was present already before
                   //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
-                  count=parseInt(rows[0]['packet_id']); //storing last packet id in 
+                  count=parseInt(rows[0]['field1']); //storing last packet id in 
                   if(parseInt(batS)!=0)//check if secondary battery is absent
-                    var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+batP+', '+batS+', NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+                    var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\',\''+batS+'\')';
                   else
-                    var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+batP+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+                    var batquery='INSERT INTO feeds(device_id, field1, field2) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\')';
                 }
               else{
                   if(parseInt(batS)!=0)//check if secondary battery is absent
-                    var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+batP+', '+batS+', NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+                    var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\',\''+batS+'\')';
                   else
-                    var batquery='INSERT INTO feeds VALUES (DEFAULT,\''+batmac.macid+'\','+(count+1)+',\''+1+'\','+batP+', NULL, NULL,NULL,DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+                    var batquery='INSERT INTO feeds VALUES(device_id, field1, field2) (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\')';
                 }
                 connection.query(batquery, function(err, rows, fields) { //insert into the feed table
                 if (err)
@@ -796,7 +797,10 @@ function newSwitches(macId,type){
             if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
               if(regex.test(macId))//check if the client id is the macid
               { //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
-                var devdis='UPDATE devices SET switches='+type+' where deviceId=\''+macId+'\'';
+                if(type==1)
+                  var devdis='UPDATE devices SET switches='+type+', field1=\'packetId\', field2=\'Pbattery\', field3=\'SBattery\' where deviceId=\''+macId+'\'';
+                else if(type>1)
+                  var devdis='UPDATE devices SET switches='+type+' where deviceId=\''+macId+'\'';//No battery needed for relay or switches>1
                 connection.query(devdis, function(err, rows, fields) { //insert into the table 
                   if (err) 
                     log.error("MYSQL ERROR "+err);

@@ -105,15 +105,50 @@ serialPort.on("open", function () {
            // console.log('Inside client connected '+find);
            if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
                //var devdis='INSERT INTO devices VALUES (DEFAULT,NULL,\''+post.macid+'\',NULL,2,1, DEFAULT,NULL,\''+res[2]+'\')';
-               var devdis='INSERT INTO devices(deviceId, type, switches) VALUES (\''+post.macid+'\',2,0)';//table restructured
+               var thingspeak=null;
+               if(res[2]==='bthm'){//for bthm
+                  var devdis='INSERT INTO devices(deviceId, description, type, switches, field1, field2, field3, field4, field5, field6) VALUES (\''+post.macid+'\', \'It records battery, temperature, humidity and moisture value\', 2,0, \'bthm\', \'packetId\', \'battery\', \'temperature\', \'humidity\', \'moisture\')';//table restructured
+                  thingspeakchannelrow={
+                      'api_key' : env.apiKey,
+                      'name'    : res[0],
+                      'description' : 'It records battery, temperature, humidity and moisture value',
+                      'field1'  :'batValue',
+                      'field2'  :'tempValue',
+                      'field3'  :'humidValue',
+                      'field4'  :'moistValue',
+                      'field5'  :'packetId'
+                  }
+               }
+               else if(res[2]==='b'){//for hub
+                  var devdis='INSERT INTO devices(deviceId, description, type, switches, field1, field2, field3) VALUES (\''+post.macid+'\', \'It is a Hub conneccting various sensor nodes\', 2,0, \'b\', \'packetId\', \'battery\')';//for the normal Hub connection
+                  thingspeakchannelrow={
+                      'api_key' : env.apiKey,
+                      'name'    : res[0],
+                      'description' : 'It is a Hub conneccting various sensor nodes',
+                      'field1'  :'batValue',
+                      'field2'  :'packetId'
+                  }
+               }
+               else if(res[2]==='bm'){//for hub
+                  var devdis='INSERT INTO devices(deviceId, description, type, switches, field1, field2, field3, field4) VALUES (\''+post.macid+'\', \'It records battery and moisture value\', 2,0, \'bm\', \'packetId\', \'battery\', \'moisture\')';//for the moisture sensor only
+                  thingspeakchannelrow={
+                      'api_key' : env.apiKey,
+                      'name'    : res[0],
+                      'description' : 'It records battery and moisture value',
+                      'field1'  :'batValue',
+                      'field2'  :'moistValue',
+                      'field3'  :'packetId'
+                  }
+               }
+               //var devdis='INSERT INTO devices(deviceId, type, switches) VALUES (\''+post.macid+'\',2,0)';//table restructured
                 connection.query(devdis, function(err, rows, fields) { //insert into the table 
                   if (err) 
                   log.error(err);
                   else{
                     log.info('New Sensor Device found, adding '+post.macid+' into device table');
-                    client.createChannel(1, { 'api_key':env.apiKey,'name':res[0], 'field1':'batValue','field2':'tempValue','field3':'humidValue','field4':'moistValue','field5':'packetID'}, function(err) {
+                    client.createChannel(1, thingspeakchannelrow, function(err) {
                       if (!err) {//channel creation done
-                          log.info('New channel created for sensor: '+res[0]);
+                          log.info('New channel created for sensor: '+res[0]+' type '+res[2]);
                           attachChannel(res[0]);//attaching the channel;
                       }
                       else
@@ -171,10 +206,10 @@ serialPort.on("open", function () {
      // console.log(res[6]);//gets moisture
       if(!isNaN(res[3])&&!isNaN(res[4])&&!isNaN(res[5])&&!isNaN(res[6]))
       {
-        var sensorVal='INSERT INTO feeds VALUES (DEFAULT,\''+res[0]+'\','+res[1]+',\''+res[2]+'\','+res[3]+','+res[4]+','+res[5]+','+res[6]+',DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+        var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3, field4, field5, field6) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\',\''+res[4]+'\',\''+res[5]+'\',\''+res[6]+'\')';
         connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
           if (err)
-            log.error('Error in inserting serial data, error: '+err+', time: '+date);
+            log.error('Error in inserting serial data, error: '+err);
          // else
             // log.info('Feed added for '+res[0]+' on '+date);
           });
@@ -205,13 +240,57 @@ serialPort.on("open", function () {
     }
     else if(res[2]==='bm')
     {
-      var sensorVal='INSERT INTO feeds VALUES (DEFAULT,\''+res[0]+'\','+res[1]+',\''+res[2]+'\',NULL, NULL, NULL,'+res[3]+',DEFAULT,DEFAULT,NULL,NULL,NULL,NULL,NULL,NULL)';
+      var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3, field4) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\',\''+res[6]+'\')';//only battery and moisture
       connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
         if (err)
          log.error('Error in inserting serial data, error: '+err+', time: '+date);
-        else
-           log.info('Feed added for '+res[0]+' on '+date);
+        //else
+           //log.info('Feed added for '+res[0]+' on '+date);
         });
+      var jsonS={
+        "deviceId":res[0],
+         "packetNo":res[1],
+         "deviceType":res[2],
+         "batValue":res[3],
+         "moistValue":res[6]
+      };
+      sendAll(jsonS);//to websocket client
+      findChannel(res[0], function(channel_Id){//updating the thingspeak feed
+            client.updateChannel(channel_Id, { "field1":res[3],"field2":res[6],"field3":res[1]}, function(err, resp) {
+            if (!err && resp > 0) {
+                log.info('Thingspeak feed update successfully for channel id '+channel_Id);
+            }
+            });
+         
+
+      });
+
+    }
+    else if(res[2]==='b')
+    {
+      var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\')';//only battery
+      connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
+        if (err)
+         log.error('Error in inserting serial data, error: '+err+', time: '+date);
+        //else
+           //log.info('Feed added for '+res[0]+' on '+date);
+        });
+      var jsonS={
+        "deviceId":res[0],
+         "packetNo":res[1],
+         "deviceType":res[2],
+         "batValue":res[3]
+      };
+      sendAll(jsonS);//to websocket client
+      findChannel(res[0], function(channel_Id){//updating the thingspeak feed
+            client.updateChannel(channel_Id, { "field1":res[3],"field2":res[1]}, function(err, resp) {
+            if (!err && resp > 0) {
+                log.info('Thingspeak feed update successfully for channel id '+channel_Id);
+            }
+            });
+         
+
+      });
     }
     //count++;
     //console.log('data count : ' + count);
@@ -266,7 +345,7 @@ function sendAll(jsonS){  //
 setInterval(function() { 
   //checking for sensor device is offline or not
   //var query='Select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275';
-  var query="Select *, TIMEDIFF(now(),feeds.created_at) from (Select device_id, MAX(id) as cid from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where TIMEDIFF(now(),feeds.created_at)>STR_TO_DATE('00:04:35','%H:%i:%s')";
+  var query="Select *, TIMEDIFF(now(),feeds.created_at) from (Select device_id, MAX(id) as cid from feeds where field1!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where TIMEDIFF(now(),feeds.created_at)>STR_TO_DATE('00:04:35','%H:%i:%s')";
   //var checkstatus='Update devices SET status=0, seen=now() where macid in (select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275) and status not in (0,2)';
   connection.query(query,function(err,rows,fields){//query 1
     if(rows.length>0){
