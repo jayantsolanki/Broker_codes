@@ -236,14 +236,14 @@ serialPort.on("open", function () {
           
       }
       else
-         log.warn('Packet is corrupted, client id: '+res[0]+' '+date);
+         log.warn('Packet is corrupted, client id: '+res[0]);
     }
     else if(res[2]==='bm')
     {
       var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3, field4) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\',\''+res[4]+'\')';//only battery and moisture
       connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
         if (err)
-         log.error('Error in inserting serial data, error: '+err+', time: '+date);
+         log.error('Error in inserting serial data, error: '+err);
         //else
            //log.info('Feed added for '+res[0]+' on '+date);
         });
@@ -256,7 +256,7 @@ serialPort.on("open", function () {
       };
       sendAll(jsonS);//to websocket client
       findChannel(res[0], function(channel_Id){//updating the thingspeak feed
-            client.updateChannel(channel_Id, { "field1":res[3],"field2":res[6],"field3":res[1]}, function(err, resp) {
+            client.updateChannel(channel_Id, { "field1":res[3],"field2":res[4],"field3":res[1]}, function(err, resp) {
             if (!err && resp > 0) {
                 log.info('Thingspeak feed update successfully for channel id '+channel_Id);
             }
