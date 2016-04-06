@@ -273,7 +273,7 @@ server.on('published', function(packet) {
                   log.info('Published 3 to '+batmacid);
                   mqttclient.end();
                   findChannel(batmacid, function(channel_Id){//updating the thingspeak feed
-                      TSclient.updateChannel(channel_Id, { "field1":parseInt(batP),"field2":(count+1),"field3":parseInt(batS)}, function(err, resp) {
+                      TSclient.updateChannel(channel_Id, { "field1":parseInt(batP),"field2":parseInt(batS),"field3":(count+1)}, function(err, resp) {
                       if (!err && resp > 0) {
                           log.info('Thingspeak feed update successfully for channel id '+channel_Id);
                       }
