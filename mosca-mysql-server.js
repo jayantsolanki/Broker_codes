@@ -245,46 +245,48 @@ server.on('published', function(packet) {
       log.info('Device type is of ',type);//new swiches insert goes here
       newSwitches(batmacid,type);//goes to the function and do the necessary
       var count=0;
-          connection.query('SELECT field1 from feeds where device_id=\''+batmacid+'\' ORDER BY field1 DESC LIMIT 1', function(err, rows, fields) {
-            if (!err){
-              if(rows.length>0 && batP!=0){//check if the macid was present already before
-                  //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
-                  count=parseInt(rows[0]['field1']); //storing last packet id in 
-                  if(parseInt(batS)!=0)//check if secondary battery is absent
-                    var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\',\''+batS+'\')';
-                  else
-                    var batquery='INSERT INTO feeds(device_id, field1, field2) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\')';
-                }
-              else{
-                  if(parseInt(batS)!=0)//check if secondary battery is absent
-                    var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\',\''+batS+'\')';
-                  else
-                    var batquery='INSERT INTO feeds VALUES(device_id, field1, field2) (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\')';
-                }
-                connection.query(batquery, function(err, rows, fields) { //insert into the feed table
-                if (err)
-                  log.error("MYSQL ERROR "+err);
-                else{
-                  log.info('Primary Battery status inserted for device '+batmacid+' with voltage '+batP);
-                  if(parseInt(batS)!=0)
-                    log.info('Secondary Battery status inserted for device '+batmacid+' with voltage '+batS);
-                  var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-                  mqttpub(mqttclient,batmacid,0,3); //sending hibernate signal, replacing 2 by 3
-                  log.info('Published 3 to '+batmacid);
-                  mqttclient.end();
-                  findChannel(batmacid, function(channel_Id){//updating the thingspeak feed
-                      TSclient.updateChannel(channel_Id, { "field1":parseInt(batP),"field2":parseInt(batS),"field3":(count+1)}, function(err, resp) {
-                      if (!err && resp > 0) {
-                          log.info('Thingspeak feed update successfully for channel id '+channel_Id);
-                      }
+            if(batP!=0){
+              connection.query('SELECT field1 from feeds where device_id=\''+batmacid+'\' ORDER BY field1 DESC LIMIT 1', function(err, rows, fields) {
+                if (!err){
+                  if(rows.length>0){//check if the macid was present already before
+                      //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
+                      count=parseInt(rows[0]['field1']); //storing last packet id in 
+                      if(parseInt(batS)!=0)//check if secondary battery is absent
+                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\',\''+batS+'\')';
+                      else
+                        var batquery='INSERT INTO feeds(device_id, field1, field2) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\')';
+                    }
+                  else{
+                      if(parseInt(batS)!=0)//check if secondary battery is absent
+                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\',\''+batS+'\')';
+                      else
+                        var batquery='INSERT INTO feeds VALUES(device_id, field1, field2) (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\')';
+                    }
+                    connection.query(batquery, function(err, rows, fields) { //insert into the feed table
+                    if (err)
+                      log.error("MYSQL ERRORRRRRR "+err);
+                    else{
+                      log.info('Primary Battery status inserted for device '+batmacid+' with voltage '+batP);
+                      if(parseInt(batS)!=0)
+                        log.info('Secondary Battery status inserted for device '+batmacid+' with voltage '+batS);
+                      var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                      mqttpub(mqttclient,batmacid,0,3); //sending hibernate signal, replacing 2 by 3
+                      log.info('Published 3 to '+batmacid);
+                      mqttclient.end();
+                      findChannel(batmacid, function(channel_Id){//updating the thingspeak feed
+                          TSclient.updateChannel(channel_Id, { "field1":parseInt(batP),"field2":parseInt(batS),"field3":(count+1)}, function(err, resp) {
+                          if (!err && resp > 0) {
+                              log.info('Thingspeak feed update successfully for channel id '+channel_Id);
+                          }
+                          });
                       });
-                  });
-                }
-                });
+                    }
+                    });
+              }
+                else
+                  log.error('Error while performing Query');
+              });
           }
-            else
-              log.error('Error while performing Query');
-          });
           
         }
 
