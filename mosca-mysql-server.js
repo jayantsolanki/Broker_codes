@@ -247,7 +247,7 @@ server.on('published', function(packet) {
       var count=0;
           connection.query('SELECT field1 from feeds where device_id=\''+batmacid+'\' ORDER BY field1 DESC LIMIT 1', function(err, rows, fields) {
             if (!err){
-              if(rows.length>0){//check if the macid was present already before
+              if(rows.length>0 && batP!=0){//check if the macid was present already before
                   //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
                   count=parseInt(rows[0]['field1']); //storing last packet id in 
                   if(parseInt(batS)!=0)//check if secondary battery is absent
