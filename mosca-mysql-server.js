@@ -81,7 +81,7 @@ var thingspeak_config={ //for thingspeak
   host     : env.mhost2,
   user     : env.user,
   password : env.password,
-  socketPath :'/var/run/mysqld/mysqld.sock',
+  socketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database2//thingspeak
 }
 var connection = mysql.createConnection(localdb_config);
@@ -164,7 +164,6 @@ server.on('clientConnected', function(client) {
                     });*/
                   }
                 });
-
               }
             }
           
@@ -244,7 +243,7 @@ server.on('published', function(packet) {
      // msg=Integer.parseInt(msg);
       //console.log(msg);
       log.info('Device type is of ',type);//new swiches insert goes here
-      newSwitches(batmacid,type);//goes to the function and do the necessary
+      newSwitches(batmacid,type, batP, batS);//goes to the function and do the necessary
       var count=0;
             if(batP!=0){
               connection.query('SELECT field1 from feeds where device_id=\''+batmacid+'\' ORDER BY field1 DESC LIMIT 1', function(err, rows, fields) {
@@ -307,7 +306,7 @@ function setup() {
   //var currenttime=date.getTime()
 	attachChannels();//attaching the chaneels with their API write keys
   var tasks = "select * from tasks where active!=3"; //only non disabled task
-  var minutes = 1, the_interval = 2000; //set time here, every two seconds below code is repeated
+  var minutes = 1, the_interval = 10000; //set time here, every ten seconds below code is repeated
   var date = new Date();
   log.info('Mosca server is up and running on '+env.mhost+':'+env.mport);
   setInterval(function() {
@@ -458,7 +457,7 @@ function setup() {
                    mqttclient.end();
                   }
                 });
-                if(type==0)
+                if(type==0)//manual task, set for indiviudal valves
                 {
                   //console.log("You are in the deletion zone");
                   connection.query('Delete from tasks where id='+id+'', function(err, rows, fields) { //delete from the table 
@@ -540,7 +539,7 @@ function mqttpub(mqttclient,macid,switchId,action)//method for publishing the me
 // battery status check
 function battstatus()
 {
-  var query='Select deviceId from devices where type=1';
+  var query='Select deviceId from devices where type=1 and switches=1';//only for one valve ESP
   connection.query(query,function(err,rows,fields){
     if(err)
       log.error('Error in checking battery status, '+err);
@@ -785,7 +784,7 @@ function deviceStatus(row, callback){
 *logic: check if there is any previous entry of the deivce in swiches table
 *
 */
-function newSwitches(macId,type){
+function newSwitches(macId,type,batP, batS){
   var check='SELECT EXISTS(SELECT * FROM switches WHERE deviceId=\''+macId+'\') as find';
       connection.query(check, function(err, rows, fields) {
       //console.log('Inside client connected '+val);
@@ -825,6 +824,14 @@ function newSwitches(macId,type){
                         else
                         {
                           console.log(err)
+                        }
+                      });
+                      var devdis='INSERT INTO deviceNotif(deviceId, field1, field2) VALUES (\''+macId+'\',0,0)'//insert into deviceNotif table
+                      connection.query(devdis, function(err, rows, fields) { //insert into the table 
+                        if (err) 
+                          log.error("MYSQL ERROR Entry in deviceNotif "+err);
+                        else{
+                          log.info("Device Entry in deviceNotif table");
                         }
                       });
                     }
