@@ -73,15 +73,15 @@ var ascoltatore = {
 var localdb_config={
   host     : env.localhost,
   user     : env.user,
-  password : env.password,
+  password : env.password1,
   socketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database
 }
 var thingspeak_config={ //for thingspeak
   host     : env.mhost2,
   user     : env.user,
-  password : env.password,
-  socketPath: '/var/run/mysqld/mysqld.sock',
+  password : env.password2,
+  //socketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database2//thingspeak
 }
 var connection = mysql.createConnection(localdb_config);
@@ -217,7 +217,7 @@ server.on('published', function(packet) {
   var topic=packet.topic; //get value of payload
   var regex1 = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
   topic=topic.toString();
-  if(regex1.test(packet)){
+  if(regex1.test(packet) || packet=='M-O-S-C-A'){
     log.info('Client id is ',packet);
     log.info('Published topic '+packet.topic);
     log.info('Published payload '+packet.payload);
