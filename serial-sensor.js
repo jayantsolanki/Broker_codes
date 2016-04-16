@@ -76,16 +76,26 @@ connectionThingspeak.connect();//thingspeak
 /////serial config
 var SerialPort = require("serialport").SerialPort
 var serialPort = new SerialPort(env.portNo, {
-  baudrate: 9600
+  baudrate: 9600,
+  stopBits: 1,//new editions
+  dataBits: 6,
+  parity: 'odd'
 })
 /////////////////
 //serial listen
 serialPort.on("open", function () {
   log.info(env.portNo+' port opened');
+  serialPort.flush();//flushing previous data
   attachChannels(); //attaching the api-keys
   //console.log('open');
   var count=0
   var res, dataout;
+  serialPort.on('error', function(err) {
+    log.error("Some error in reading the data "+err);
+  });
+  serialPort.on('disconnect', function(disc) {
+    log.error("Port closed: "+disc);
+  });
   serialPort.on('data', function(data) {
     log.info('data received: '+data);
     
