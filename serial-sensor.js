@@ -51,33 +51,51 @@ var mysql      = require('mysql');
 var localdb_config={
   host     : env.localhost,
   user     : env.user,
-  password : env.password,
+  password : env.password1,
   database : env.database
+}
+var remote_config={ //for remote
+  host     : env.mhost2,
+  user     : env.user,
+  password : env.password2,
+  database : env.database//remote
 }
 var thingspeak_config={ //for thingspeak
   host     : env.mhost2,
   user     : env.user,
-  password : env.password,
+  password : env.password2,
   database : env.database2//thingspeak
 }
-var connection = mysql.createConnection(localdb_config);
-var thingspeak = mysql.createConnection(thingspeak_config);
-connection.connect();//general
-thingspeak.connect();//thingspeak
+var connectionlocal = mysql.createConnection(localdb_config);
+var connectionRemote = mysql.createConnection(remote_config);
+var connectionThingspeak = mysql.createConnection(thingspeak_config);
+connectionlocal.connect();//general
+connectionRemote.connect();//remote
+connectionThingspeak.connect();//thingspeak
 //configuration ended
 /////serial config
 var SerialPort = require("serialport").SerialPort
 var serialPort = new SerialPort(env.portNo, {
-  baudrate: 9600
+  baudrate: 9600,
+  stopBits: 1,//new editions
+  dataBits: 6,
+  parity: 'odd'
 })
 /////////////////
 //serial listen
 serialPort.on("open", function () {
   log.info(env.portNo+' port opened');
+  serialPort.flush();//flushing previous data
   attachChannels(); //attaching the api-keys
   //console.log('open');
   var count=0
   var res, dataout;
+  serialPort.on('error', function(err) {
+    log.error("Some error in reading the data "+err);
+  });
+  serialPort.on('disconnect', function(disc) {
+    log.error("Port closed: "+disc);
+  });
   serialPort.on('data', function(data) {
     log.info('data received: '+data);
     
@@ -95,7 +113,7 @@ serialPort.on("open", function () {
     var post  = {macid: res[0]};
     //if(res[2].substring()){ //check if the data is corrupt or not by checking the third parameter, string
 
-      connection.query('SELECT EXISTS(SELECT * FROM devices WHERE deviceId=\''+post.macid+'\') as find', function(err, rows, fields) {
+      connectionRemote.query('SELECT EXISTS(SELECT * FROM devices WHERE deviceId=\''+post.macid+'\') as find', function(err, rows, fields) {
       //console.log('Inside client connected '+val);
       
         if (err) 
@@ -140,8 +158,7 @@ serialPort.on("open", function () {
                       'field3'  :'packetId'
                   }
                }
-               //var devdis='INSERT INTO devices(deviceId, type, switches) VALUES (\''+post.macid+'\',2,0)';//table restructured
-                connection.query(devdis, function(err, rows, fields) { //insert into the table 
+                connectionlocal.query(devdis, function(err, rows, fields) { //insert into the table 
                   if (err) 
                   log.error(err);
                   else{
@@ -156,6 +173,13 @@ serialPort.on("open", function () {
                         console.log(err)
                       }
                      });
+                    connectionRemote.query(devdis, function(err, rows, fields) { //insert into the remote table 
+                      if (err) 
+                      log.error(err);
+                      else{
+                        log.info('New Sensor Device found, adding '+post.macid+' into Remote device table');
+                      }
+                    });
                   }
                 });
                   
@@ -167,23 +191,39 @@ serialPort.on("open", function () {
              deviceStatus(post.macid, function(status,row){
                 if(status==0){//insert only if the last row for that device was vice versa
                   var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',1, DEFAULT)';
-                  connection.query(devdis, function(err, rows, fields) { //update the table //query3
+                  connectionlocal.query(devdis, function(err, rows, fields) { //update the table //query3
                     if (err)
                       log.error("MYSQL ERROR "+err);
                     else{
                       //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
                       log.info('Device '+row+' went online');
+                          connectionRemote.query(devdis, function(err, rows, fields) { //update the remote table //query3
+                        if (err)
+                          log.error("MYSQL ERROR "+err);
+                        else{
+                          //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                          log.info('Updated remote table for the online status');
+                        }
+                      });
                     }
                   });
                 }
                 else if (status==2){//if no last row exists
                   var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',1, DEFAULT)';
-                  connection.query(devdis, function(err, rows, fields) { //update the table //query3
+                  connectionlocal.query(devdis, function(err, rows, fields) { //update the table //query3
                     if (err)
                       log.error("MYSQL ERROR "+err);
                     else{
                       //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
                       log.info('Device '+row+' went online');
+                      connectionRemote.query(devdis, function(err, rows, fields) { //update the remote table //query3
+                        if (err)
+                          log.error("MYSQL ERROR "+err);
+                        else{
+                          //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                          log.info('Updated remote table for the online status');
+                        }
+                      });
                     }
                   });
                 }
@@ -207,11 +247,18 @@ serialPort.on("open", function () {
       if(!isNaN(res[3])&&!isNaN(res[4])&&!isNaN(res[5])&&!isNaN(res[6]))
       {
         var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3, field4, field5, field6) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\',\''+res[4]+'\',\''+res[5]+'\',\''+res[6]+'\')';
-        connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
+        connectionlocal.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
           if (err)
             log.error('Error in inserting serial data, error: '+err);
-         // else
+          else{
             // log.info('Feed added for '+res[0]+' on '+date);
+            connectionRemote.query(sensorVal, function(err, rows, fields) { //insert into the remote feed table 
+              if (err)
+                log.error('Error in inserting serial data, error: '+err);
+              else
+                 log.info('Remote feed updated with new data');
+            });
+          }
           });
           var jsonS={
             "deviceId":res[0],
@@ -241,12 +288,19 @@ serialPort.on("open", function () {
     else if(res[2]==='bm')
     {
       var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3, field4) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\',\''+res[4]+'\')';//only battery and moisture
-      connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
+      connectionlocal.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
         if (err)
          log.error('Error in inserting serial data, error: '+err);
-        //else
+        else{
            //log.info('Feed added for '+res[0]+' on '+date);
-        });
+           connectionRemote.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
+              if (err)
+               log.error('Error in inserting serial data, error: '+err);
+              else
+                 log.info('Remote feed updated with new data');
+            });
+         }
+      });
       var jsonS={
         "deviceId":res[0],
          "packetNo":res[1],
@@ -269,12 +323,19 @@ serialPort.on("open", function () {
     else if(res[2]==='b')
     {
       var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\')';//only battery
-      connection.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
+      connectionlocal.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
         if (err)
          log.error('Error in inserting serial data, error: '+err+', time: '+date);
-        //else
+        else{
            //log.info('Feed added for '+res[0]+' on '+date);
-        });
+           connectionRemote.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
+              if (err)
+               log.error('Error in inserting serial data, error: '+err+', time: '+date);
+              else
+                 log.info('Remote feed updated with new data');
+            });
+         }
+      });
       var jsonS={
         "deviceId":res[0],
          "packetNo":res[1],
@@ -347,7 +408,7 @@ setInterval(function() {
   //var query='Select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275';
   var query="Select *, TIMEDIFF(now(),feeds.created_at) from (Select device_id, MAX(id) as cid from feeds where field1!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where TIMEDIFF(now(),feeds.created_at)>STR_TO_DATE('00:04:35','%H:%i:%s')";
   //var checkstatus='Update devices SET status=0, seen=now() where macid in (select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275) and status not in (0,2)';
-  connection.query(query,function(err,rows,fields){//query 1
+  connectionRemote.query(query,function(err,rows,fields){//query 1
     if(rows.length>0){
           if(err)
           log.error('Error in getting devid of the sensor, '+err);
@@ -357,23 +418,39 @@ setInterval(function() {
                 deviceStatus(rows[j].device_id, function(status,row){
                     if(status==1){//insert only if the last row for that device was vice versa
                       var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',0, DEFAULT)';
-                      connection.query(devdis, function(err, rows, fields) { //update the table //query3
+                      connectionlocal.query(devdis, function(err, rows, fields) { //update the table //query3
                         if (err)
                           log.error("MYSQL ERROR "+err);
                         else{
                           //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
                           log.info('Device '+row+' went offline');
+                          connectionRemote.query(devdis, function(err, rows, fields) { //update the remote table //query3
+                            if (err)
+                              log.error("MYSQL ERROR "+err);
+                            else{
+                              //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                              log.info('Remote entry for device offline');
+                            }
+                          });
                         }
                       });
                     }
                     else if (status==2){//if no last row exists
                       var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',0, DEFAULT)';
-                      connection.query(devdis, function(err, rows, fields) { //update the table //query3
+                      connectionlocal.query(devdis, function(err, rows, fields) { //update the table //query3
                         if (err)
                           log.error("MYSQL ERROR "+err);
                         else{
                           //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
                           log.info('Device '+row+' went offline');
+                          connectionRemote.query(devdis, function(err, rows, fields) { //update the remote table //query3
+                            if (err)
+                              log.error("MYSQL ERROR "+err);
+                            else{
+                              //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                              log.info('Remote entry for device offline');
+                            }
+                          });
                         }
                       });
                     }
@@ -394,7 +471,7 @@ setInterval(function() {
 */
 function attachChannels(){
       var query='Select api_key, channel_id from api_keys where write_flag=1';
-      thingspeak.query(query,function(err,rows,fields){
+      connectionThingspeak.query(query,function(err,rows,fields){
       if(err)
         log.error('Error in checking apikeys, thingspeak, '+err);
       else{
@@ -419,7 +496,7 @@ function attachChannel(name){
       findChannel(name, function(channel_Id){//updating the thingspeak feed
 
             var query='Select api_key from api_keys where write_flag=1 and channel_id='+channel_Id;  //findapikey
-            thingspeak.query(query,function(err,rows,fields){
+            connectionThingspeak.query(query,function(err,rows,fields){
       				if(rows.length>0){
       		          if(err)
       		          log.error('Error in checking apikey, thingspeak, '+err);
@@ -443,7 +520,7 @@ function attachChannel(name){
 */
 function findChannel(name, callback){
     var query='Select id from channels where name='+name;
-    thingspeak.query(query,function(err,rows,fields){
+    connectionThingspeak.query(query,function(err,rows,fields){
       if(err)
         log.error('Error in finding channel id, thingspeak, '+err);
       else{
@@ -466,7 +543,7 @@ function findChannel(name, callback){
 */
 function deviceStatus(row, callback){
     var devid='Select status from deviceStatus where deviceId=\''+row+'\' order by id desc limit 1';
-    connection.query(devid, function(err, drows, fields) { //update the table //query2
+    connectionRemote.query(devid, function(err, drows, fields) { //update the table //query2
       if (err)
         log.error("MYSQL ERROR "+err);
       else{
@@ -481,6 +558,45 @@ function deviceStatus(row, callback){
 }
 
 /******************************
+*function: remoteDisconnect()
+*input: none
+*output; return new connection to mysql db
+*logic: check if connection is lost, then tries to connect again, for handling thingspeak connection
+*
+*********************************/
+function remoteDisconnect() {
+  connectionRemote = mysql.createConnection(remote_config); // Recreate the connection, since
+                                                  // the old one cannot be reused.
+
+  connectionRemote.connect(function(err) {              // The server is either down
+    if(err) {                                     // or restarting (takes a while sometimes).
+     //log.error('error when connecting to db:', err);
+      setTimeout(remoteDisconnect, 2000); //introduce a delay before attempting to reconnect,
+    }                                     // to avoid a hot loop, and to allow our node script to
+  });                                     // process asynchronous requests in the meantime.
+                                          // If you're also serving http, display a 503 error.
+  connectionRemote.on('error', function(err) {
+    //log.error('db error', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+      remoteDisconnect();                         // lost due to either server restart, or a
+    } else {                                      // connnection idle timeout (the wait_timeout
+      throw err;                                  // server variable configures this)
+    }
+  });
+}
+
+
+//check if connection has fallen then to this, error caching
+connectionRemote.on('error', function(err) {
+    log.error('thingspeak db error', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+      remoteDisconnect();                         // lost due to either server restart, or a
+    } else {                                      // connnection idle timeout (the wait_timeout
+      throw err;                                  // server variable configures this)
+}
+});
+
+/******************************
 *function: thingspeakDisconnect()
 *input: none
 *output; return new connection to mysql db
@@ -488,17 +604,17 @@ function deviceStatus(row, callback){
 *
 *********************************/
 function thingspeakDisconnect() {
-  thingspeak = mysql.createConnection(thingspeak_config); // Recreate the connection, since
+  connectionThingspeak = mysql.createConnection(remote_config); // Recreate the connection, since
                                                   // the old one cannot be reused.
 
-  thingspeak.connect(function(err) {              // The server is either down
+  connectionThingspeak.connect(function(err) {              // The server is either down
     if(err) {                                     // or restarting (takes a while sometimes).
      //log.error('error when connecting to db:', err);
       setTimeout(thingspeakDisconnect, 2000); //introduce a delay before attempting to reconnect,
     }                                     // to avoid a hot loop, and to allow our node script to
   });                                     // process asynchronous requests in the meantime.
                                           // If you're also serving http, display a 503 error.
-  thingspeak.on('error', function(err) {
+  connectionThingspeak.on('error', function(err) {
     //log.error('db error', err);
     if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
       thingspeakDisconnect();                         // lost due to either server restart, or a
@@ -510,7 +626,7 @@ function thingspeakDisconnect() {
 
 
 //check if connection has fallen then to this, error caching
-thingspeak.on('error', function(err) {
+connectionThingspeak.on('error', function(err) {
     log.error('thingspeak db error', err);
     if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
       thingspeakDisconnect();                         // lost due to either server restart, or a
@@ -527,17 +643,17 @@ thingspeak.on('error', function(err) {
 *
 *********************************/
 function localdbDisconnect() {
-  connection = mysql.createConnection(localdb_config); // Recreate the connection, since
+  connectionlocal = mysql.createConnection(localdb_config); // Recreate the connection, since
                                                   // the old one cannot be reused.
 
-  connection.connect(function(err) {              // The server is either down
+  connectionlocal.connect(function(err) {              // The server is either down
     if(err) {                                     // or restarting (takes a while sometimes).
      //log.error('error when connecting to db:', err);
       setTimeout(localdbDisconnect, 2000); //introduce a delay before attempting to reconnect,
     }                                     // to avoid a hot loop, and to allow our node script to
   });                                     // process asynchronous requests in the meantime.
                                           // If you're also serving http, display a 503 error.
-  connection.on('error', function(err) {
+  connectionlocal.on('error', function(err) {
     //log.error('db error', err);
     if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
       localdbDisconnect();                         // lost due to either server restart, or a
@@ -547,7 +663,7 @@ function localdbDisconnect() {
   });
 }
 
-connection.on('error', function(err) {
+connectionlocal.on('error', function(err) {
     log.error('db error', err);
     if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
       localdbDisconnect();                         // lost due to either server restart, or a

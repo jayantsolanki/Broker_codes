@@ -216,8 +216,8 @@ server.on('published', function(packet) {
   var topic=packet.topic; //get value of payload
   var regex1 = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
   topic=topic.toString();
-  if(regex1.test(packet)){
-    log.info('Client id is ',packet);
+  if(regex1.test(packet) || packet.cmd=='publish'){
+    log.info('Client id is ',packet.cmd);
     log.info('Published topic '+packet.topic);
     log.info('Published payload '+packet.payload);
   }
