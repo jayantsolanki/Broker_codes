@@ -559,7 +559,7 @@ wss.on('connection', function(ws) {
   wscon=ws;
   var client_uuid=uuid.v4();
   clients.push({"id": client_uuid, "ws": wscon});//adds client detail
- // log.info('client [%s] connected',client_uuid);
+  log.info('client [%s] connected',client_uuid);
   
   wscon.on('message', function(message) {
     var response = JSON.parse(message);
@@ -575,11 +575,11 @@ wss.on('connection', function(ws) {
       mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
       mqttclient.end();
     }
-    //console.log('message received ', response.deviceId);
+    console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
   });
 
   wscon.on('close', function() {
-    //  log.info("web socket connection closed ",client_uuid);
+      log.info("web socket connection closed ",client_uuid);
       wscon=null;
   });
 });
