@@ -577,7 +577,7 @@ wss.on('connection', function(ws) {
       mqttclient.end();
       console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
     }
-    console.log(response);
+    //console.log(response);
     //console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
   });
 
