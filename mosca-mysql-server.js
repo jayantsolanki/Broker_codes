@@ -600,7 +600,7 @@ function sendAll(jsonS){  //
                 }
                 else{
                     //log.info('client [%s]: %s', clients[i].id, jsonS);
-                    client.send(JSON.stringify(jsonS));//sending status to webpage of the current state of the device
+                    client.send('pong',JSON.stringify(jsonS));//sending status to webpage of the current state of the device
                 }
                 
             }
