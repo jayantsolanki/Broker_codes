@@ -81,7 +81,7 @@ var thingspeak_config={ //for thingspeak
   host     : env.mhost2,
   user     : env.user,
   password : env.password2,
-  socketPath: '/var/run/mysqld/mysqld.sock',
+  sudsocketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database2//thingspeak
 }
 var connection = mysql.createConnection(localdb_config);
@@ -563,19 +563,22 @@ wss.on('connection', function(ws) {
   
   wscon.on('message', function(message) {
     var response = JSON.parse(message);
-    if(response.check!=null)
+    if(response.event=='battery')//for battery check event
     {
-      if(response.device==0)
+      //if(response.device==0)
       battstatus();
       log.info('Client requested battery status from ESP devices');
+      //console.log('message received ', response.data.check, 'action ', response.data.payload, 'deviceId ', response.data.device);
 
     }
     else{
       var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
       mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
       mqttclient.end();
+      console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
     }
-    console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
+    console.log(response);
+    //console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
   });
 
   wscon.on('close', function() {
