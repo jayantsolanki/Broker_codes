@@ -282,13 +282,21 @@ server.on('published', function(packet) {
                       });
                     }
                     });
-              }
+                }
                 else
                   log.error('Error while performing Query');
               });
-          }
+              var jsonS={
+                     "deviceId":batmacid,
+                     "action"  :"battery",
+                     "type"    :type,
+                     "batP"    :batP,
+                     "batS"    :batS
+               };
+               sendAll(jsonS);//sending  battery value to the client website
+           }
           
-        }
+    }
 
   }
      
