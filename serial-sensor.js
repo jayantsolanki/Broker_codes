@@ -409,55 +409,60 @@ setInterval(function() {
   var query="Select *, TIMEDIFF(now(),feeds.created_at) from (Select device_id, MAX(id) as cid from feeds where field1!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where TIMEDIFF(now(),feeds.created_at)>STR_TO_DATE('00:04:35','%H:%i:%s')";
   //var checkstatus='Update devices SET status=0, seen=now() where macid in (select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275) and status not in (0,2)';
   connectionRemote.query(query,function(err,rows,fields){//query 1
-    if(rows.length>0){
-          if(err)
-          log.error('Error in getting devid of the sensor, '+err);
-          else{
-            for (var j=0;j<rows.length;j++)//going through all the macid
-            {
-                deviceStatus(rows[j].device_id, function(status,row){
-                    if(status==1){//insert only if the last row for that device was vice versa
-                      var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',0, DEFAULT)';
-                      connectionlocal.query(devdis, function(err, rows, fields) { //update the table //query3
-                        if (err)
-                          log.error("MYSQL ERROR "+err);
-                        else{
-                          //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
-                          log.info('Device '+row+' went offline');
-                          connectionRemote.query(devdis, function(err, rows, fields) { //update the remote table //query3
-                            if (err)
-                              log.error("MYSQL ERROR "+err);
-                            else{
-                              //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
-                              log.info('Remote entry for device offline');
-                            }
-                          });
-                        }
-                      });
-                    }
-                    else if (status==2){//if no last row exists
-                      var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',0, DEFAULT)';
-                      connectionlocal.query(devdis, function(err, rows, fields) { //update the table //query3
-                        if (err)
-                          log.error("MYSQL ERROR "+err);
-                        else{
-                          //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
-                          log.info('Device '+row+' went offline');
-                          connectionRemote.query(devdis, function(err, rows, fields) { //update the remote table //query3
-                            if (err)
-                              log.error("MYSQL ERROR "+err);
-                            else{
-                              //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
-                              log.info('Remote entry for device offline');
-                            }
-                          });
-                        }
-                      });
-                    }
-                 });                
-            }//end of for loop
-              
-          }
+    try{
+      if(rows.length>0){
+            if(err)
+            log.error('Error in getting devid of the sensor, '+err);
+            else{
+              for (var j=0;j<rows.length;j++)//going through all the macid
+              {
+                  deviceStatus(rows[j].device_id, function(status,row){
+                      if(status==1){//insert only if the last row for that device was vice versa
+                        var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',0, DEFAULT)';
+                        connectionlocal.query(devdis, function(err, rows, fields) { //update the table //query3
+                          if (err)
+                            log.error("MYSQL ERROR "+err);
+                          else{
+                            //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                            log.info('Device '+row+' went offline');
+                            connectionRemote.query(devdis, function(err, rows, fields) { //update the remote table //query3
+                              if (err)
+                                log.error("MYSQL ERROR "+err);
+                              else{
+                                //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                                log.info('Remote entry for device offline');
+                              }
+                            });
+                          }
+                        });
+                      }
+                      else if (status==2){//if no last row exists
+                        var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+row+'\',0, DEFAULT)';
+                        connectionlocal.query(devdis, function(err, rows, fields) { //update the table //query3
+                          if (err)
+                            log.error("MYSQL ERROR "+err);
+                          else{
+                            //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                            log.info('Device '+row+' went offline');
+                            connectionRemote.query(devdis, function(err, rows, fields) { //update the remote table //query3
+                              if (err)
+                                log.error("MYSQL ERROR "+err);
+                              else{
+                                //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
+                                log.info('Remote entry for device offline');
+                              }
+                            });
+                          }
+                        });
+                      }
+                   });                
+              }//end of for loop
+                
+            }
+      }
+    }
+    catch(e){
+      log.error('Error struck '+e);
     }
   });
  }, 10000);
