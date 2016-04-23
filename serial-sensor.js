@@ -325,7 +325,7 @@ serialPort.on("open", function () {
       var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\')';//only battery
       connectionlocal.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
         if (err)
-         log.error('Error in inserting serial data, error: '+err+', time: '+date);
+         log.error('Error in inserting serial data, error: '+err);
         else{
            //log.info('Feed added for '+res[0]+' on '+date);
            connectionRemote.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
