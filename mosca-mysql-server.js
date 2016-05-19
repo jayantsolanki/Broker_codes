@@ -74,14 +74,14 @@ var localdb_config={
   host     : env.localhost,
   user     : env.user,
   password : env.password1,
-  socketPath: '/var/run/mysqld/mysqld.sock',
+  //socketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database
 }
 var thingspeak_config={ //for thingspeak
   host     : env.mhost2,
   user     : env.user,
   password : env.password2,
-  socketPath: '/var/run/mysqld/mysqld.sock',
+  //socketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database2//thingspeak
 }
 var connection = mysql.createConnection(localdb_config);
@@ -578,6 +578,10 @@ wss.on('connection', function(ws) {
       log.info('Client requested battery status from ESP devices');
       //console.log('message received ', response.data.check, 'action ', response.data.payload, 'deviceId ', response.data.device);
 
+    }
+    else if (response!=null){//for  getting data from serial sensor and broadcasting it
+      console.log('Message received: '+response.deviceId );
+      sendAll(response);
     }
     else{
       var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
