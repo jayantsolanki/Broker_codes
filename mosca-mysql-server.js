@@ -74,14 +74,14 @@ var localdb_config={
   host     : env.localhost,
   user     : env.user,
   password : env.password1,
-  //socketPath: '/var/run/mysqld/mysqld.sock',
+  socketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database
 }
 var thingspeak_config={ //for thingspeak
   host     : env.mhost2,
   user     : env.user,
   password : env.password2,
-  //socketPath: '/var/run/mysqld/mysqld.sock',
+  socketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database2//thingspeak
 }
 var connection = mysql.createConnection(localdb_config);
