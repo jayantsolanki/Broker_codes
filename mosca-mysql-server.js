@@ -580,7 +580,7 @@ wss.on('connection', function(ws) {
 
     }
     else if (response!=null){//for  getting data from serial sensor and broadcasting it
-      console.log('Message received: '+response.deviceId );
+      //console.log('Message received: '+response.deviceId );
       sendAll(response);
     }
     else{
