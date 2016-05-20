@@ -335,7 +335,7 @@ serialPort.on("open", function () {
            //log.info('Feed added for '+res[0]+' on '+date);
            connectionRemote.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
               if (err)
-               log.error('Error in inserting serial data, error: '+err+', time: '+date);
+               log.error('Error in inserting serial data, error: '+err);
               else
                  log.info('Remote feed updated with new data');
             });
@@ -415,7 +415,7 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
 }
 /******************broadcast*****************/
 function sendAll(jsonS){  //
-  if(wscon!=null){//sending data via websocket
+  if(ws!=null){//sending data via websocket
     try{
       ws.send(JSON.stringify(jsonS));
     }
