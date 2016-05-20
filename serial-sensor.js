@@ -7,11 +7,14 @@ var client = new ThingSpeakClient({
 });
 
 /***************Adding websocket feature*******/
-var uuid = require('node-uuid');
-var WebSocketServer = require('ws').Server,
-    wss = new WebSocketServer({port: 8181});
-var wscon=null;
-var clients=[];
+//var uuid = require('node-uuid');
+//var WebSocketServer = require('ws').Server,
+//    wss = new WebSocketServer({port: 8181});
+var WebSocket = require('ws');
+var ws=null;
+wsConnect();
+//var wscon=null;
+//var clients=[];
   ///////////////////////
 ////initiating the bunyan log
 var Logger = require('bunyan');
@@ -147,7 +150,7 @@ serialPort.on("open", function () {
                       'field2'  :'packetId'
                   }
                }
-               else if(res[2]==='bm'){//for hub
+               else if(res[2]==='bm'){//for moisture only sensor
                   var devdis='INSERT INTO devices(deviceId, description, type, switches, field1, field2, field3, field4) VALUES (\''+post.macid+'\', \'It records battery and moisture value\', 2,0, \'bm\', \'packetId\', \'battery\', \'moisture\')';//for the moisture sensor only
                   thingspeakchannelrow={
                       'api_key' : env.apiKey,
@@ -262,6 +265,7 @@ serialPort.on("open", function () {
           });
           var jsonS={
             "deviceId":res[0],
+            "action": 'data',
              "packetNo":res[1],
              "deviceType":res[2],
              "batValue":res[3],
@@ -303,6 +307,7 @@ serialPort.on("open", function () {
       });
       var jsonS={
         "deviceId":res[0],
+        "action": 'data',
          "packetNo":res[1],
          "deviceType":res[2],
          "batValue":res[3],
@@ -338,6 +343,7 @@ serialPort.on("open", function () {
       });
       var jsonS={
         "deviceId":res[0],
+        "action": 'data',
          "packetNo":res[1],
          "deviceType":res[2],
          "batValue":res[3]
@@ -365,7 +371,7 @@ serialPort.on("open", function () {
 
 });
 /****************implementing websocket***********/
-wss.on('connection', function(ws) {
+/*wss.on('connection', function(ws) {
   wscon=ws;
   var client_uuid=uuid.v4();
   clients.push({"id": client_uuid, "ws": wscon});//adds client detail
@@ -380,25 +386,47 @@ wss.on('connection', function(ws) {
       console.log("connection closed");
       wscon=null;
   });
-});
+});*/
+/**************************************Websocket con*********************************/
+function wsConnect() {//creating a websocket connection to the mosca-mysql-server.js for transfering the sensor value to the latter script
+    ws = new WebSocket("ws://10.129.139.139:8180");
+    ws.onopen = function() {
+      console.log('connected');
+    };
+   /* ws.onmessage = function(msg) {
+      console.log(msg);
+    };
+*/
+    ws.onclose = function(evt) {
+      if (evt.code == 3110) {
+        console.log('ws closed');
+        ws = null;
+      } else {
+        ws = null;
+        console.log('ws connection error');
+      }
+    };
 
+    ws.onerror = function(evt) {
+      if (ws.readyState == 1) {
+        console.log('ws normal error: ' + evt.type);
+      }
+    };
+}
 /******************broadcast*****************/
 function sendAll(jsonS){  //
   if(wscon!=null){//sending data via websocket
-      if(wscon.readyState == 1) {
-            for(var i=0; i<clients.length; i++) {
-                var client = clients[i].ws;
-                if(client.readyState != client.OPEN){ //checking for dead socket
-                    //log.error('Client state is ' + client.readyState+' that is unresponsive');
-                }
-                else{
-                    //log.info('client [%s]: %s', clients[i].id, jsonS);
-                    client.send(JSON.stringify(jsonS));//sending status to webpage of the current state of the device
-                }
-                
-            }
-      }
+    try{
+      ws.send(JSON.stringify(jsonS));
     }
+    catch(e){
+      //wsConnect();
+      console.log('unable to send the sensor data, reconnecting to mosca-mysql-server');
+      wsConnect();
+    }
+  }
+  else
+    wsConnect();
 }
 //////////////////////////////////
 
@@ -676,3 +704,4 @@ connectionlocal.on('error', function(err) {
       throw err;                                  // server variable configures this)
     }
   });
+
