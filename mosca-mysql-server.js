@@ -587,7 +587,7 @@ wss.on('connection', function(ws) {
       var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
       mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
       mqttclient.end();
-      console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
+      console.log(response);
     }
     //console.log(response);
     //console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
