@@ -635,7 +635,7 @@ wss.on('connection', function(ws) {
       log.info('Client requested battery status from ESP devices');
       var jsonS={
            "action":'battery check',
-           "data"  :"Client requested for battery status";
+           "data"  :"Client requested for battery status"
       };
       sendAll(jsonS);//sending button status to all device
 
