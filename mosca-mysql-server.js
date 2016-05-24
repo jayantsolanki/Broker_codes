@@ -152,6 +152,12 @@ server.on('clientConnected', function(client) {
                     var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
                     mqttpub(mqttclient,post.macid,0,2);//calling mqttpub for publishing value 2 to all macids
                     mqttclient.end();
+                    var jsonS={
+                         "deviceId":post.macid,
+                         "action":'info',
+                         "data"  :"new Device Found"
+                    };
+                    sendAll(jsonS);//sending button status to all device
                     /*TSclient.createChannel(1, { 'api_key':env.apiKey,'name':post.macid, 'field1':'PbatValue', 'field2':'SbatValue','field3':'packetID'}, function(err) {
                       if (!err) {//channel creation done
                           log.info('New channel created for new Valve: '+post.macid);
@@ -216,6 +222,11 @@ server.on('published', function(packet) {
   var topic=packet.topic; //get value of payload
   var regex1 = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
   topic=topic.toString();
+  var jsonS={
+       "action":'mqtt payload',
+       "data"  :packet
+  };
+  sendAll(jsonS);//sending button status to all device
   if(regex1.test(packet) || packet.cmd=='publish'){
     log.info('Client id is ',packet.cmd);
     log.info('Published topic '+packet.topic);
@@ -347,6 +358,11 @@ function setup() {
               if(flag==1){
                 battstatus();
                 log.info('Requested for battery status from ESP devices');
+                var jsonS={
+                     "action":'battery check',
+                     "data"  :"Requested for battery status from ESP devices"
+                };
+                sendAll(jsonS);//sending button status to all device
               }
               flag=0;
             }
@@ -398,10 +414,21 @@ function setup() {
                    // console.log(currenttime);
                       var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
                       log.info("Scheduled task started for switching on the Valves");
+                      var jsonS={
+                           "action":'schedule',
+                           "data"  :"Scheduled task started for switching on the Valves"
+                      };
+                      sendAll(jsonS);//sending button status to all device
+
                       for (var j=0;j<devs.length;j++)//
                       {
                           log.info("Switched on Device "+devs[j].deviceId+" SwitchId "+devs[j].switchId);
                           mqttpub(mqttclient,devs[j].deviceId,devs[j].switchId,1);//code modified here, added provision for the switches
+                          var jsonS={
+                               "action":'switched',
+                               "data"  :"Switched on Device "+devs[j].deviceId+" SwitchId "+devs[j].switchId
+                          };
+                          sendAll(jsonS);//sending button status to all device
                       }
                       mqttclient.end();
 
@@ -429,6 +456,11 @@ function setup() {
                 else{
                   //console.log('Devices Entry Updated, Set to 1');
                   log.info('Done executing the tasks');
+                  var jsonS={
+                       "action":'schedule',
+                       "data"  :"Done executing the tasks"
+                  };
+                  sendAll(jsonS);//sending button status to all device
                 }
                 });
 
@@ -457,9 +489,19 @@ function setup() {
                    // console.log(currenttime);
                    var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
                    log.info("Scheduled task started for switching off the valves");
+                   var jsonS={
+                         "action":'schedule',
+                         "data"  :"Scheduled task started for switching off the valves"
+                    };
+                    sendAll(jsonS);//sending button status to all device
                    for (var j=0;j<devs.length;j++)// publishing the message
                    {
                         log.info("Switched off "+devs[j].deviceId+" SwitchId "+devs[j].switchId)
+                        var jsonS={
+                             "action":'switched',
+                             "data"  :"Switched off Device "+devs[j].deviceId+" SwitchId "+devs[j].switchId
+                        };
+                        sendAll(jsonS);//sending button status to all device
                         mqttpub(mqttclient,devs[j].deviceId,devs[j].switchId,0);//modified for inluding the relays and the raavan
                    }
                    mqttclient.end();
@@ -473,6 +515,11 @@ function setup() {
                       log.error("MYSQL ERROR "+err);
                     else
                       log.info('Manual task entry deleted');
+                    var jsonS={
+                         "action":'schedule',
+                         "data"  :"Manual entry deleted"
+                    };
+                    sendAll(jsonS);//sending button status to all device
                     });
                 }
                 else
@@ -497,6 +544,11 @@ function setup() {
                 else{
                   //console.log('Devices Entry Updated, Set to 0');
                   log.info('Done executing the tasks');
+                  var jsonS={
+                       "action":'schedule',
+                       "data"  :"Done executing the tasks"
+                  };
+                  sendAll(jsonS);//sending button status to all device
                 }
                 });
 
@@ -557,6 +609,11 @@ function battstatus()
       {
           log.info("Checking battery status for device "+rows[j].deviceId)
           mqttpub(mqttclient,rows[j].deviceId,0,2);//calling mqttpub for publishing value 2 to all macids
+          var jsonS={
+               "action":'battery check',
+               "data"  :"Checking battery status for device "+rows[j].deviceId
+          };
+          sendAll(jsonS);//sending button status to all device
       }
       mqttclient.end();
     }
@@ -576,6 +633,12 @@ wss.on('connection', function(ws) {
       //if(response.device==0)
       battstatus();
       log.info('Client requested battery status from ESP devices');
+      var jsonS={
+           "action":'battery check',
+           "data"  :"Client requested for battery status";
+      };
+      sendAll(jsonS);//sending button status to all device
+
       //console.log('message received ', response.data.check, 'action ', response.data.payload, 'deviceId ', response.data.device);
 
     }
@@ -588,6 +651,11 @@ wss.on('connection', function(ws) {
       mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
       mqttclient.end();
       console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
+      var jsonS={
+           "action":'switch',
+           "data"  :"message received "+response.deviceId+" action "+response.payload+" switchID "+response.switchId
+      };
+      sendAll(jsonS);//sending button status to all device
     }
     //console.log(response);
     //console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
@@ -636,6 +704,12 @@ function attachChannels(){
         {
             log.info("attaching apikey for channel id "+rows[j].channel_id)
             TSclient.attachChannel(rows[j].channel_id, { writeKey:rows[j].api_key});
+            var jsonS={
+                 "action":'thingspeak',
+                 "data"  :"attaching apikey for channel id "+rows[j].channel_id
+            };
+            sendAll(jsonS);//sending button status to all device
+
         }
       
       }
@@ -660,6 +734,11 @@ function attachChannel(name){
 				      else{
 				          TSclient.attachChannel(channel_Id, { writeKey:rows[0].api_key});
 				          log.info("Apikey "+rows[0].api_key+" attached to channel id "+channel_Id);
+                  var jsonS={
+                       "action":'thingspeak',
+                       "data"  :"Apikey "+rows[0].api_key+" attached to channel id "+channel_Id
+                  };
+                  sendAll(jsonS);//sending button status to all device
 				      }
 					}
             });
@@ -823,6 +902,11 @@ function newSwitches(macId,type,batP, batS){
                     log.error("MYSQL ERROR "+err);
                   else{
                     log.info('Device type updated for '+macId+' into device table, type '+type);
+                      var jsonS={
+                           "action":'device',
+                           "data"  :"Device type updated for "+macId+" into device table, type "+type
+                      };
+                      sendAll(jsonS);//sending button status to all device
                     if(type==1){//for thingspeak feed
                       var thingspeakchannelrow={
                         'api_key' : env.apiKey,
@@ -834,6 +918,11 @@ function newSwitches(macId,type,batP, batS){
                       TSclient.createChannel(1, thingspeakchannelrow, function(err) {
                         if (!err) {//channel creation done
                             log.info('New channel created for new Valve: '+macId);
+                            var jsonS={
+                                 "action":'device',
+                                 "data"  :'New channel created for new Valve: '+macId
+                            };
+                            sendAll(jsonS);//sending button status to all device
                             attachChannel(macId);//attaching the channel;
                         }
                         else
@@ -847,6 +936,11 @@ function newSwitches(macId,type,batP, batS){
                           log.error("MYSQL ERROR Entry in deviceNotif "+err);
                         else{
                           log.info("Device Entry in deviceNotif table");
+                          var jsonS={
+                               "action":'device',
+                               "data"  :'Device Entry in deviceNotif table'
+                          };
+                          sendAll(jsonS);//sending button status to all device
                         }
                       });
                     }
@@ -876,6 +970,11 @@ function insertSwitch(macId, switchId){
         log.error("Error in creating new switches "+err);
       else{
         log.info('Creating entry for DeviceId '+macId+' SwitchId '+switchId);
+        var jsonS={
+             "action":'device',
+             "data"  :'Creating entry for DeviceId '+macId+' SwitchId '+switchId
+        };
+        sendAll(jsonS);//sending button status to all device
         }
     });
 }
