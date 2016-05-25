@@ -263,15 +263,15 @@ server.on('published', function(packet) {
                       //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
                       count=parseInt(rows[0]['field1']); //storing last packet id in 
                       if(parseInt(batS)!=0)//check if secondary battery is absent
-                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\',\''+batS+'\')';
+                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(++count)+'\',\''+batP+'\',\''+batS+'\')';
                       else
-                        var batquery='INSERT INTO feeds(device_id, field1, field2) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\')';
+                        var batquery='INSERT INTO feeds(device_id, field1, field2) VALUES (\''+batmac.macid+'\',\''+(++count)+'\',\''+batP+'\')';
                     }
                   else{
                       if(parseInt(batS)!=0)//check if secondary battery is absent
-                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\',\''+batS+'\')';
+                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(++count)+'\',\''+batP+'\',\''+batS+'\')';
                       else
-                        var batquery='INSERT INTO feeds VALUES(device_id, field1, field2) (\''+batmac.macid+'\',\''+(count+1)+'\',\''+batP+'\')';
+                        var batquery='INSERT INTO feeds VALUES(device_id, field1, field2) (\''+batmac.macid+'\',\''+(++count)+'\',\''+batP+'\')';
                     }
                     connection.query(batquery, function(err, rows, fields) { //insert into the feed table
                     if (err)
