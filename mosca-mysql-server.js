@@ -257,7 +257,7 @@ server.on('published', function(packet) {
       newSwitches(batmacid,type, batP, batS);//goes to the function and do the necessary
       var count=0;
             if(batP!=0){
-              connection.query('SELECT field1 from feeds where device_id=\''+batmacid+'\' ORDER BY field1 DESC LIMIT 1', function(err, rows, fields) {
+              connection.query('SELECT field1 from feeds where device_id=\''+batmacid+'\' ORDER BY id DESC LIMIT 1', function(err, rows, fields) {
                 if (!err){
                   if(rows.length>0){//check if the macid was present already before
                       //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
@@ -266,15 +266,15 @@ server.on('published', function(packet) {
                       count=count+1;
                       console.log('count is '+count);
                       if(parseInt(batS)!=0)//check if secondary battery is absent
-                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(++count)+'\',\''+batP+'\',\''+batS+'\')';
+                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+count)+'\',\''+batP+'\',\''+batS+'\')';
                       else
-                        var batquery='INSERT INTO feeds(device_id, field1, field2) VALUES (\''+batmac.macid+'\',\''+(++count)+'\',\''+batP+'\')';
+                        var batquery='INSERT INTO feeds(device_id, field1, field2) VALUES (\''+batmac.macid+'\',\''+(count)+'\',\''+batP+'\')';
                     }
                   else{
                       if(parseInt(batS)!=0)//check if secondary battery is absent
-                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(++count)+'\',\''+batP+'\',\''+batS+'\')';
+                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count)+'\',\''+batP+'\',\''+batS+'\')';
                       else
-                        var batquery='INSERT INTO feeds VALUES(device_id, field1, field2) (\''+batmac.macid+'\',\''+(++count)+'\',\''+batP+'\')';
+                        var batquery='INSERT INTO feeds VALUES(device_id, field1, field2) (\''+batmac.macid+'\',\''+(count)+'\',\''+batP+'\')';
                     }
                     connection.query(batquery, function(err, rows, fields) { //insert into the feed table
                     if (err)
