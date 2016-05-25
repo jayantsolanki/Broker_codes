@@ -139,7 +139,7 @@ serialPort.on("open", function () {
         else{
             var find=rows[0]['find'];
            // console.log('Inside client connected '+find);
-           if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
+           if(find==0 && res[0]>9){ //check device is the new one, find=0 means new device found, no previous entry in the table
                //var devdis='INSERT INTO devices VALUES (DEFAULT,NULL,\''+post.macid+'\',NULL,2,1, DEFAULT,NULL,\''+res[2]+'\')';
                var thingspeak=null;
                if(res[2]==='bthm'){//for bthm
@@ -211,7 +211,7 @@ serialPort.on("open", function () {
                   }
                 });
                   
-           }
+           }//end of find if condition
 
            else{
              log.info('Device '+post.macid+' sent new data');
