@@ -266,7 +266,7 @@ server.on('published', function(packet) {
                       count=count+1;
                       console.log('count is '+count);
                       if(parseInt(batS)!=0)//check if secondary battery is absent
-                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+count)+'\',\''+batP+'\',\''+batS+'\')';
+                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count)+'\',\''+batP+'\',\''+batS+'\')';
                       else
                         var batquery='INSERT INTO feeds(device_id, field1, field2) VALUES (\''+batmac.macid+'\',\''+(count)+'\',\''+batP+'\')';
                     }
