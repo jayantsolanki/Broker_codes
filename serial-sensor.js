@@ -95,12 +95,27 @@ serialPort.on("open", function () {
   var res, dataout;
   serialPort.on('error', function(err) {
     log.error("Some error in reading the data "+err);
+    var jsonS={
+         "action":'Serial Error',
+         "data"  :"Some error in reading the data "+err
+    };
+    sendAll(jsonS);//sending button status to all device
   });
   serialPort.on('disconnect', function(disc) {
     log.error("Port closed: "+disc);
+    var jsonS={
+         "action":'Serial Error',
+         "data"  :"Port closed: "+disc
+    };
+    sendAll(jsonS);//sending button status to all device
   });
   serialPort.on('data', function(data) {
     log.info('data received: '+data);
+    var jsonS={
+         "action":'Serial data',
+         "data"  :"data received: "+data
+    };
+    sendAll(jsonS);//sending button status to all device
     
     
     //console.log("Time: "+date);
@@ -166,9 +181,19 @@ serialPort.on("open", function () {
                   log.error(err);
                   else{
                     log.info('New Sensor Device found, adding '+post.macid+' into device table');
+                    var jsonS={
+                         "action":'Device',
+                         "data"  :"New Sensor Device found, adding "+post.macid+" into device table"
+                    };
+                    sendAll(jsonS);//sending button status to all device
                     client.createChannel(1, thingspeakchannelrow, function(err) {
                       if (!err) {//channel creation done
                           log.info('New channel created for sensor: '+res[0]+' type '+res[2]);
+                          var jsonS={
+                               "action":'thingspeak',
+                               "data"  :"New channel created for sensor: "+res[0]+" type "+res[2]
+                          };
+                          sendAll(jsonS);//sending button status to all device
                           attachChannel(res[0]);//attaching the channel;
                       }
                       else
@@ -256,8 +281,14 @@ serialPort.on("open", function () {
           else{
             // log.info('Feed added for '+res[0]+' on '+date);
             connectionRemote.query(sensorVal, function(err, rows, fields) { //insert into the remote feed table 
-              if (err)
+              if (err){
                 log.error('Error in inserting serial data, error: '+err);
+                var jsonS={
+                     "action":'Error',
+                     "data"  :"Error in inserting serial data, error: "+err
+                };
+                sendAll(jsonS);//sending button status to all device
+              }
               else
                  log.info('Remote feed updated with new data');
             });
@@ -278,6 +309,11 @@ serialPort.on("open", function () {
                 client.updateChannel(channel_Id, { "field1":res[3],"field2":res[4],"field3":res[5],"field4":res[6],"field5":res[1]}, function(err, resp) {
                 if (!err && resp > 0) {
                     log.info('Thingspeak feed update successfully for channel id '+channel_Id);
+                    var jsonS={
+                         "action":'thingspeak',
+                         "data"  :"Thingspeak feed update successfully for channel id "+channel_Id
+                    };
+                    sendAll(jsonS);//sending button status to all device
                 }
                 });
              
@@ -293,13 +329,25 @@ serialPort.on("open", function () {
     {
       var sensorVal='INSERT INTO feeds(device_Id, field1, field2, field3, field4) VALUES (\''+res[0]+'\',\''+res[2]+'\',\''+res[1]+'\',\''+res[3]+'\',\''+res[4]+'\')';//only battery and moisture
       connectionlocal.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
-        if (err)
+        if (err){
          log.error('Error in inserting serial data, error: '+err);
+         var jsonS={
+               "action":'Error',
+               "data"  :"Error in inserting serial data, error: "+err
+          };
+          sendAll(jsonS);//sending button status to all device
+        }
         else{
            //log.info('Feed added for '+res[0]+' on '+date);
            connectionRemote.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
-              if (err)
-               log.error('Error in inserting serial data, error: '+err);
+              if (err){
+                 log.error('Error in inserting serial data, error: '+err);
+                 var jsonS={
+                       "action":'Error',
+                       "data"  :"Error in inserting serial data, error: "+err
+                  };
+                  sendAll(jsonS);//sending button status to all device
+               }
               else
                  log.info('Remote feed updated with new data');
             });
@@ -318,6 +366,11 @@ serialPort.on("open", function () {
             client.updateChannel(channel_Id, { "field1":res[3],"field2":res[4],"field3":res[1]}, function(err, resp) {
             if (!err && resp > 0) {
                 log.info('Thingspeak feed update successfully for channel id '+channel_Id);
+                var jsonS={
+                     "action":'thingspeak',
+                     "data"  :"Thingspeak feed update successfully for channel id "+channel_Id
+                };
+                sendAll(jsonS);//sending button status to all device
             }
             });
          
@@ -334,8 +387,14 @@ serialPort.on("open", function () {
         else{
            //log.info('Feed added for '+res[0]+' on '+date);
            connectionRemote.query(sensorVal, function(err, rows, fields) { //insert into the feed table 
-              if (err)
+              if (err){
                log.error('Error in inserting serial data, error: '+err);
+               var jsonS={
+                     "action":'Error',
+                     "data"  :"Error in inserting serial data, error: "+err
+                };
+                sendAll(jsonS);//sending button status to all device
+              }
               else
                  log.info('Remote feed updated with new data');
             });
@@ -353,6 +412,11 @@ serialPort.on("open", function () {
             client.updateChannel(channel_Id, { "field1":res[3],"field2":res[1]}, function(err, resp) {
             if (!err && resp > 0) {
                 log.info('Thingspeak feed update successfully for channel id '+channel_Id);
+                var jsonS={
+                     "action":'thingspeak',
+                     "data"  :"Thingspeak feed update successfully for channel id "+channel_Id
+                };
+                sendAll(jsonS);//sending button status to all device
             }
             });
          
@@ -401,9 +465,15 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
       if (evt.code == 3110) {
         console.log('ws closed');
         ws = null;
-      } else {
+      } 
+      else {
         ws = null;
         console.log('ws connection error');
+        var jsonS={
+             "action":'Error',
+             "data"  :"unable to send the sensor data, reconnecting to mosca-mysql-server"
+        };
+        sendAll(jsonS);//sending button status to all device
       }
     };
 
@@ -422,6 +492,11 @@ function sendAll(jsonS){  //
     catch(e){
       //wsConnect();
       console.log('unable to send the sensor data, reconnecting to mosca-mysql-server');
+      var jsonS={
+           "action":'Error',
+           "data"  :"unable to send the sensor data, reconnecting to mosca-mysql-server"
+      };
+      sendAll(jsonS);//sending button status to all device
       wsConnect();
     }
   }
@@ -459,6 +534,11 @@ setInterval(function() {
                               else{
                                 //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
                                 log.info('Remote entry for device offline');
+                                var jsonS={
+                                       "deviceId":row,
+                                       "status":1
+                                 };
+                                 sendAll(jsonS);//sending  online status to website
                               }
                             });
                           }
@@ -478,7 +558,12 @@ setInterval(function() {
                               else{
                                 //log.info('Devices Entry for '+rows[0].device_id+'Updated, Set to 0/offline');
                                 log.info('Remote entry for device offline');
-                              }
+                                var jsonS={
+                                         "deviceId":row,
+                                         "status":1
+                                   };
+                                   sendAll(jsonS);//sending  online status to website
+                                }
                             });
                           }
                         });
@@ -512,6 +597,11 @@ function attachChannels(){
         {
             log.info("attaching apikey for channel id "+rows[j].channel_id)
             client.attachChannel(rows[j].channel_id, { writeKey:rows[j].api_key});
+            var jsonS={
+                 "action":'thingspeak',
+                 "data"  :"attaching apikey for channel id "+rows[j].channel_id
+            };
+            sendAll(jsonS);//sending button status to all device
         }
       
       }
@@ -536,6 +626,11 @@ function attachChannel(name){
       		          else{
       		              client.attachChannel(channel_Id, { writeKey:rows[0].api_key});
       		              log.info("Apikey "+rows[0].api_key+" attached to channel id "+channel_Id);
+                        var jsonS={
+                             "action":'thingspeak',
+                             "data"  :"Apikey "+rows[0].api_key+" attached to channel id "+channel_Id
+                        };
+                        sendAll(jsonS);//sending button status to all device
       		          }
       				}
             });
