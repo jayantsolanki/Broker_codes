@@ -262,9 +262,9 @@ server.on('published', function(packet) {
                   if(rows.length>0){//check if the macid was present already before
                       //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
                       count=parseInt(rows[0]['field1']); //storing last packet id in 
-                      console.log('count is '+count);
+                     // console.log('count is '+count);
                       count=count+1;
-                      console.log('count is '+count);
+                     // console.log('count is '+count);
                       if(parseInt(batS)!=0)//check if secondary battery is absent
                         var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count)+'\',\''+batP+'\',\''+batS+'\')';
                       else
