@@ -642,11 +642,11 @@ wss.on('connection', function(ws) {
       //console.log('message received ', response.data.check, 'action ', response.data.payload, 'deviceId ', response.data.device);
 
     }
-    else if (response.action=='data' || response.status!=null){//for  getting data from serial sensor and broadcasting it
+    else if (response.action!=null || response.status!=null){//for  getting data from serial sensor and broadcasting it
       //console.log('Message received: '+response.deviceId );
       sendAll(response);
     }
-    else{
+    else if (response.payload!=null){
       var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
       mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
       mqttclient.end();
