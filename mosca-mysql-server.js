@@ -353,9 +353,10 @@ function setup() {
             type=rows[i]['type'];
             var date=new Date();
             currenttime=date.getHours()*100+date.getMinutes();
+            console.log('current time is ',currenttime);
             if(currenttime==0000)
               flag=1; 
-            if(currenttime==1830 || currenttime==1830)//check battery status at every 6:30pm
+            if(currenttime==1200 || currenttime==1200)//check battery status at every 6:30pm
             {
               
               if(flag==1){
