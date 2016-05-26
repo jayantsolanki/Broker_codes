@@ -494,7 +494,7 @@ function sendAll(jsonS){  //
       console.log('unable to send the sensor data, reconnecting to mosca-mysql-server');
       var jsonS={
            "action":'Error',
-           "data"  :"unable to send the sensor data, reconnecting to mosca-mysql-server"
+           "data"  :"error in sedning the websocket data"
       };
       sendAll(jsonS);//sending button status to all device
       wsConnect();
@@ -507,7 +507,7 @@ function sendAll(jsonS){  //
 
 
 setInterval(function() { 
-  //checking for sensor device is offline or not
+  //checking for sensor device is offline or not, also for checking if the weboscket connection is alive or not
   //var query='Select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275';
   var query="Select *, TIMEDIFF(now(),feeds.created_at) from (Select device_id, MAX(id) as cid from feeds where field1!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where TIMEDIFF(now(),feeds.created_at)>STR_TO_DATE('00:04:35','%H:%i:%s')";
   //var checkstatus='Update devices SET status=0, seen=now() where macid in (select feeds.device_id from  (Select device_id, MAX(id) as cid  from feeds where device_type!=1 group by device_id) as temp left join feeds on temp.cid= feeds.id where now()-feeds.created_at>275) and status not in (0,2)';
