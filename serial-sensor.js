@@ -468,7 +468,7 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
       } 
       else {
         ws = null;
-        log.error('ws connection error');
+        console.log('ws connection error');
         var jsonS={
              "action":'Error',
              "data"  :"unable to send the sensor data, reconnecting to mosca-mysql-server"
@@ -479,7 +479,7 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
 
     ws.onerror = function(evt) {
       //if (ws.readyState == 1) {
-       log.error('ws normal error: ' + evt.type);
+       console.log('ws normal error: ' + evt.type);
       //}
     };
 }
