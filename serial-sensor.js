@@ -455,7 +455,7 @@ serialPort.on("open", function () {
 function wsConnect() {//creating a websocket connection to the mosca-mysql-server.js for transfering the sensor value to the latter script
     ws = new WebSocket("ws://10.129.139.139:8180");
     ws.onopen = function() {
-      console.log('connected');
+      log.info('connected to websocket server');
     };
    /* ws.onmessage = function(msg) {
       console.log(msg);
@@ -463,12 +463,12 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
 */
     ws.onclose = function(evt) {
       if (evt.code == 3110) {
-        console.log('ws closed');
+        log.error('ws closed');
         ws = null;
       } 
       else {
         ws = null;
-        console.log('ws connection error');
+        log.error('ws connection error');
         var jsonS={
              "action":'Error',
              "data"  :"unable to send the sensor data, reconnecting to mosca-mysql-server"
@@ -479,7 +479,7 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
 
     ws.onerror = function(evt) {
       //if (ws.readyState == 1) {
-        console.log('ws normal error: ' + evt.type);
+       log.error('ws normal error: ' + evt.type);
       //}
     };
 }
@@ -491,10 +491,10 @@ function sendAll(jsonS){  //
     }
     catch(e){
       //wsConnect();
-      console.log('unable to send the sensor data, reconnecting to mosca-mysql-server');
+      console.log('error in sending the websocket data');
       var jsonS={
            "action":'Error',
-           "data"  :"error in sedning the websocket data"
+           "data"  :"error in sending the websocket data"
       };
       sendAll(jsonS);//sending button status to all device
       wsConnect();
