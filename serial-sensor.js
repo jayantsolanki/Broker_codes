@@ -491,12 +491,7 @@ function sendAll(jsonS){  //
     }
     catch(e){
       //wsConnect();
-      console.log('error in sending the websocket data');
-      var jsonS={
-           "action":'Error',
-           "data"  :"error in sending the websocket data"
-      };
-      sendAll(jsonS);//sending button status to all device
+      log.error('error in sending the websocket data');
       wsConnect();
     }
   }
