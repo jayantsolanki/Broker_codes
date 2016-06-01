@@ -52,7 +52,7 @@ connection.connect();//general
 /////////////////////
 var groupId, fieldId, condition, conditionValue, actionId, active, flag=1;//flag is for battery, for once in a day
 var reactS="SELECT * FROM reactJS WHERE activated!=0";
-var the_interval = 100;
+var the_interval = 5000;
 setInterval(function() {
 	  connection.query(reactS, function(err, react, fields) { //insert into the table 
         if (err) 
@@ -96,6 +96,7 @@ setInterval(function() {
         	}//react length check
         }
       });
+console.log('Done checking the task table');
 }, the_interval);
 
 /******************************
