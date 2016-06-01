@@ -297,7 +297,7 @@ function lowBattery(groupId, conditionValue){ //actionId 6
         					if (err) 
 					          log.error("Error in checking feeds entry in devices table"+err);
 					        else{
-					        	log.info("Battery status updated in deviceNotif table, set to adverse");// need to change the whole code
+					        	log.info("Battery status updated for sensor in deviceNotif table, set to adverse");// need to change the whole code
 					        }
         				});
         				var sensorBat='UPDATE deviceNotif SET field1=0 where deviceId in (SELECT device_id FROM feeds WHERE field3>'+conditionValue+' and device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1)';
@@ -305,7 +305,7 @@ function lowBattery(groupId, conditionValue){ //actionId 6
         					if (err) 
 					          log.error("Error in checking feeds entry in devices table"+err);
 					        else{
-					        	log.info("Battery status updated in deviceNotif table, set to healthy");// need to change the whole code
+					        	log.info("Battery status updated for sensor in deviceNotif table, set to healthy");// need to change the whole code
 					        }
         				});
         			}
@@ -315,7 +315,7 @@ function lowBattery(groupId, conditionValue){ //actionId 6
                   if (err) 
                     log.error("Error in checking feeds entry in devices table"+err);
                   else{
-                    log.info("Battery status updated in deviceNotif table, set to adverse");// need to change the whole code
+                    log.info("Battery status updated for valves in deviceNotif table, set to adverse");// need to change the whole code
                   }
                 });
                 var sensorBat='UPDATE deviceNotif SET field1=0 where deviceId in (SELECT device_id FROM feeds WHERE field2>'+conditionValue+' and device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1)';
@@ -323,7 +323,7 @@ function lowBattery(groupId, conditionValue){ //actionId 6
                   if (err) 
                     log.error("Error in checking feeds entry in devices table"+err);
                   else{
-                    log.info("Battery status updated in deviceNotif table, set to healthy");// need to change the whole code
+                    log.info("Battery status updated for valves in deviceNotif table, set to healthy");// need to change the whole code
                   }
                 });
               }
