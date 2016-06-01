@@ -87,6 +87,7 @@ setInterval(function() {
         				}
         				if(actionId==4){
         					stopScheduleAndNotify(groupId, conditionValue);//experimental
+                }
         			}
 
 
@@ -94,6 +95,7 @@ setInterval(function() {
 
         	}//react length check
         }
+      });
 }, the_interval);
 
 /******************************
