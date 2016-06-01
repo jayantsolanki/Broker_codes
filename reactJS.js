@@ -310,7 +310,7 @@ function lowBattery(groupId, conditionValue){ //actionId 6
         				});
         			}
               if(type==1){//primary battery for valves
-                var sensorBat='UPDATE deviceNotif SET field1=1 where deviceId in (SELECT device_id FROM feeds WHERE field2<'+conditionValue+' and device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1)';
+                var sensorBat='UPDATE deviceNotif SET field1=1 where deviceId in (SELECT device_id (SELECT device_id, field2 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2<'+conditionValue+')';
                 connection.query(query, function(err, sensorBat, fields) {
                   if (err) 
                     log.error("Error in checking feeds entry in devices table"+err);
@@ -318,7 +318,7 @@ function lowBattery(groupId, conditionValue){ //actionId 6
                     log.info("Battery status updated for valves in deviceNotif table, set to adverse");// need to change the whole code
                   }
                 });
-                var sensorBat='UPDATE deviceNotif SET field1=0 where deviceId in (SELECT device_id FROM feeds WHERE field2>'+conditionValue+' and device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1)';
+                var sensorBat='UPDATE deviceNotif SET field1=0 where deviceId in (SELECT device_id (SELECT device_id, field2 FROM feeds WHERE field2>'+conditionValue+' and device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2<'+conditionValue+')';
                 connection.query(query, function(err, sensorBat, fields) {
                   if (err) 
                     log.error("Error in checking feeds entry in devices table"+err);
