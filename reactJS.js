@@ -43,7 +43,8 @@ var mysql      = require('mysql');
 var localdb_config={
   host     : env.localhost,
   user     : env.user,
-  password : env.password,
+  password : env.password1,
+  socketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database
 }
 var connection = mysql.createConnection(localdb_config);
