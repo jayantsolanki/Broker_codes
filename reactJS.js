@@ -291,7 +291,7 @@ function lowBattery(groupId, conditionValue){ //actionId 6
         			var type=device[i]['type'];
         			var switches=device[i]['switches'];
         			//convert conditionValue into respective ADC value
-        			if(type==2){
+        			if(type==2){//primary battery for sensors
         				var sensorBat='UPDATE deviceNotif SET field1=1 where deviceId in (SELECT device_id FROM feeds WHERE field3<'+conditionValue+' and device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1)';
         				connection.query(query, function(err, sensorBat, fields) {
         					if (err) 
@@ -309,6 +309,24 @@ function lowBattery(groupId, conditionValue){ //actionId 6
 					        }
         				});
         			}
+              if(type==1){//primary battery for valves
+                var sensorBat='UPDATE deviceNotif SET field1=1 where deviceId in (SELECT device_id FROM feeds WHERE field2<'+conditionValue+' and device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1)';
+                connection.query(query, function(err, sensorBat, fields) {
+                  if (err) 
+                    log.error("Error in checking feeds entry in devices table"+err);
+                  else{
+                    log.info("Battery status updated in deviceNotif table, set to adverse");// need to change the whole code
+                  }
+                });
+                var sensorBat='UPDATE deviceNotif SET field1=0 where deviceId in (SELECT device_id FROM feeds WHERE field2>'+conditionValue+' and device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1)';
+                connection.query(query, function(err, sensorBat, fields) {
+                  if (err) 
+                    log.error("Error in checking feeds entry in devices table"+err);
+                  else{
+                    log.info("Battery status updated in deviceNotif table, set to healthy");// need to change the whole code
+                  }
+                });
+              }
 
 
 
