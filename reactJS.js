@@ -94,7 +94,6 @@ setInterval(function() {
 
         	}//react length check
         }
-      });
 }, the_interval);
 
 /******************************
