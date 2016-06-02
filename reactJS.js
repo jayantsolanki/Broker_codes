@@ -244,12 +244,12 @@ function connectionCheck(groupId){ //actionId 2
               console.log('Time diff is '+seconds);
               if(status==0){
                 if(seconds>3600){
-                  var query='UPDATE deviceNotif SET field6=0 where deviceId =\''+row+'\' ';//for sensor
+                  var query='UPDATE deviceNotif SET field6=1 where deviceId =\''+row+'\' ';//for sensor
                   connection.query(query, function(err, device, fields) { //insert into the table 
                     if (err) 
                       log.error("Error is updating offline status of the deviceNotif table "+err);
                     else{
-                      console.log('Offline status updated');
+                      console.log('Offline status updated for device '+row);
                     }
                   });
                 }
