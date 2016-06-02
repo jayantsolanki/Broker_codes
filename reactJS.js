@@ -340,7 +340,7 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                     if (err) 
                       log.error("Error in checking feeds entry in devices table"+err);
                     else{
-                      log.info("Battery status updated for valves in deviceNotif table, set to adverse");// need to change the whole code
+                      log.info("Secondary Battery status updated for valves in deviceNotif table, set to adverse");// need to change the whole code
                     }
                   });
                   var sensorBat='UPDATE deviceNotif SET field2=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3>\''+conditionValue+'\')';
@@ -348,7 +348,7 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                     if (err) 
                       log.error("Error in checking feeds entry in devices table"+err);
                     else{
-                      log.info("Battery status updated for valves in deviceNotif table, set to healthy");// need to change the whole code
+                      log.info("Secondary Battery status updated for valves in deviceNotif table, set to healthy");// need to change the whole code
                     }
                   });
               }
