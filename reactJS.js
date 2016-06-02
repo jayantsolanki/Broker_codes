@@ -71,9 +71,12 @@ setInterval(function() {
         				if(actionId==5){
         					checkBattery(conditionValue);//call battery check, here the value is the time of the day when to check the battery
         				}
-        				if(actionId==6){
-        					lowBattery(groupId, conditionValue);//check low battery for a group, based upon defined criteria
+        				if(actionId==6){//low primary battery
+        					lowBattery(groupId, actionId, conditionValue);//check low battery for a group, based upon defined criteria
         				}
+                if(actionId==9){//low secondary battery
+                  lowBattery(groupId, actionId, conditionValue);//check low battery for a group, based upon defined criteria
+                }
         			}
         			if(fieldId=='moisture'){//if field is set to moisture
         				if(actionId==1){
@@ -279,7 +282,7 @@ function stopScheduleAndNotify(groupId, threshold){//actionId 4
 *output; checks for low battery and set the respective status in the deviceNotif table
 *
 */
-function lowBattery(groupId, conditionValue){ //actionId 6
+function lowBattery(groupId, actionId, conditionValue){ //actionId 6
 	var query='SELECT deviceId, type, switches FROM devices where groupId='+groupId+'';
 	connection.query(query, function(err, device, fields) { //insert into the table 
         if (err) 
@@ -291,43 +294,63 @@ function lowBattery(groupId, conditionValue){ //actionId 6
         			var type=device[i]['type'];
         			var switches=device[i]['switches'];
         			//convert conditionValue into respective ADC value
-        			if(type==2){//primary battery for sensors
-        				var sensorBat='UPDATE deviceNotif SET field1=\'1\' where deviceId in (SELECT device_id FROM feeds WHERE field3<'+conditionValue+' and device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1)';
-        				connection.query(query, function(err, sensorBat, fields) {
-        					if (err) 
-					          log.error("Error in checking feeds entry in devices table"+err);
-					        else{
-					        	log.info("Battery status updated for sensor in deviceNotif table, set to adverse");// need to change the whole code
-					        }
-        				});
-        				var sensorBat='UPDATE deviceNotif SET field1=\'0\' where deviceId in (SELECT device_id FROM feeds WHERE field3>'+conditionValue+' and device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1)';
-        				connection.query(query, function(err, sensorBat, fields) {
-        					if (err) 
-					          log.error("Error in checking feeds entry in devices table"+err);
-					        else{
-					        	log.info("Battery status updated for sensor in deviceNotif table, set to healthy");// need to change the whole code
-					        }
-        				});
-        			}
-              if(type==1){//primary battery for valves
-                console.log(conditionValue);
-                console.log('Query is: '+1+'UPDATE deviceNotif SET field1=\'1\' where deviceId in (SELECT device_id FROM (SELECT device_id, field2 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2<\''+conditionValue+'\')');
-                var sensorBat='UPDATE deviceNotif SET field1=\'1\' where deviceId in (SELECT device_id FROM (SELECT device_id, field2 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2<\''+conditionValue+'\')';
-                connection.query(sensorBat, function(err, rows, fields) {
-                  if (err) 
-                    log.error("Error in checking feeds entry in devices table"+err);
-                  else{
-                    log.info("Battery status updated for valves in deviceNotif table, set to adverse");// need to change the whole code
-                  }
-                });
-                var sensorBat='UPDATE deviceNotif SET field1=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field2 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2>\''+conditionValue+'\')';
-                connection.query(sensorBat, function(err, rows, fields) {
-                  if (err) 
-                    log.error("Error in checking feeds entry in devices table"+err);
-                  else{
-                    log.info("Battery status updated for valves in deviceNotif table, set to healthy");// need to change the whole code
-                  }
-                });
+              if(actionId==6){
+          			if(type==2){//primary battery for sensors
+          				var sensorBat='UPDATE deviceNotif SET field1=\'1\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3<\''+conditionValue+'\')';
+          				connection.query(query, function(err, sensorBat, fields) {
+          					if (err) 
+  					          log.error("Error in checking feeds entry in devices table"+err);
+  					        else{
+  					        	log.info("Battery status updated for sensor in deviceNotif table, set to adverse");// need to change the whole code
+  					        }
+          				});
+          				var sensorBat='UPDATE deviceNotif SET field1=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3<\''+conditionValue+'\')';
+          				connection.query(query, function(err, sensorBat, fields) {
+          					if (err) 
+  					          log.error("Error in checking feeds entry in devices table"+err);
+  					        else{
+  					        	log.info("Battery status updated for sensor in deviceNotif table, set to healthy");// need to change the whole code
+  					        }
+          				});
+          			}
+                if(type==1){//primary battery for valves
+                  //console.log(conditionValue);
+                  //console.log('Query is: '+1+'UPDATE deviceNotif SET field1=\'1\' where deviceId in (SELECT device_id FROM (SELECT device_id, field2 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2<\''+conditionValue+'\')');
+                  var sensorBat='UPDATE deviceNotif SET field1=\'1\' where deviceId in (SELECT device_id FROM (SELECT device_id, field2 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2<\''+conditionValue+'\')';
+                  connection.query(sensorBat, function(err, rows, fields) {
+                    if (err) 
+                      log.error("Error in checking feeds entry in devices table"+err);
+                    else{
+                      log.info("Battery status updated for valves in deviceNotif table, set to adverse");// need to change the whole code
+                    }
+                  });
+                  var sensorBat='UPDATE deviceNotif SET field1=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field2 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2>\''+conditionValue+'\')';
+                  connection.query(sensorBat, function(err, rows, fields) {
+                    if (err) 
+                      log.error("Error in checking feeds entry in devices table"+err);
+                    else{
+                      log.info("Battery status updated for valves in deviceNotif table, set to healthy");// need to change the whole code
+                    }
+                  });
+                }
+              }
+              else{//checking low secondary battery
+                var sensorBat='UPDATE deviceNotif SET field2=\'1\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3<\''+conditionValue+'\')';
+                  connection.query(sensorBat, function(err, rows, fields) {
+                    if (err) 
+                      log.error("Error in checking feeds entry in devices table"+err);
+                    else{
+                      log.info("Battery status updated for valves in deviceNotif table, set to adverse");// need to change the whole code
+                    }
+                  });
+                  var sensorBat='UPDATE deviceNotif SET field2=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3>\''+conditionValue+'\')';
+                  connection.query(sensorBat, function(err, rows, fields) {
+                    if (err) 
+                      log.error("Error in checking feeds entry in devices table"+err);
+                    else{
+                      log.info("Battery status updated for valves in deviceNotif table, set to healthy");// need to change the whole code
+                    }
+                  });
               }
 
 
