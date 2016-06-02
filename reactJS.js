@@ -310,6 +310,8 @@ function lowBattery(groupId, conditionValue){ //actionId 6
         				});
         			}
               if(type==1){//primary battery for valves
+                console.log(conditionValue);
+                console.log('Query is: '+1+'UPDATE deviceNotif SET field1=\'1\' where deviceId in (SELECT device_id FROM (SELECT device_id, field2 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2<\''+conditionValue+'\')');
                 var sensorBat='UPDATE deviceNotif SET field1=\'1\' where deviceId in (SELECT device_id FROM (SELECT device_id, field2 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2<\''+conditionValue+'\')';
                 connection.query(query, function(err, sensorBat, fields) {
                   if (err) 
