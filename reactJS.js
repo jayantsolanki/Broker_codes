@@ -234,23 +234,23 @@ function connectionCheck(groupId){ //actionId 2
       if(device.length>0){
         for (var j=0;j<device.length;j++)//going through all the macid
           {
-            console.log('checking status for the device: '+device[j].deviceId);
+            //console.log('checking status for the device: '+device[j].deviceId);
             deviceStatus(device[j].deviceId, function(status, times, row){
-              console.log('Status is '+status);
+              //console.log('Status is '+status);
               
               var a = times.split(':'); // split it at the colons
               // minutes are worth 60 seconds. Hours are worth 60 minutes.
               var seconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]); 
-              console.log('Time diff is '+seconds);
+              //console.log('Time diff is '+seconds);
               if(status==0){
                 if(seconds>3600){
                   var query='UPDATE deviceNotif SET field6=1 where deviceId =\''+row+'\' ';//for sensor
                   connection.query(query, function(err, device, fields) { //insert into the table 
                     if (err) 
                       log.error("Error is updating offline status of the deviceNotif table "+err);
-                    else{
+                    /*else{
                       console.log('Offline status updated for device '+row);
-                    }
+                    }*/
                   });
                 }
                 else if(seconds<3600 && seconds>0){//for reversing th device Notif table value back to normal
@@ -258,9 +258,9 @@ function connectionCheck(groupId){ //actionId 2
                   connection.query(query, function(err, device, fields) { //insert into the table 
                     if (err) 
                       log.error("Error is updating offline status of the deviceNotif table "+err);
-                    else{
+                    /*else{
                       console.log('Offline status updated for device '+row);
-                    }
+                    }*/
                   });
                 }
 
@@ -270,9 +270,9 @@ function connectionCheck(groupId){ //actionId 2
                 connection.query(query, function(err, device, fields) { //insert into the table 
                   if (err) 
                     log.error("Error is updating offline status of the deviceNotif table "+err);
-                  else{
+                  /*else{
                     console.log('Offline status updated for device '+row);
-                  }
+                  }*/
                 });
               }
 
