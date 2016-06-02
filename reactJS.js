@@ -85,6 +85,11 @@ setInterval(function() {
                   lowBattery(groupId, actionId, conditionValue);//check low battery for a group, based upon defined criteria
                 }
         			}
+              if(fieldId=='Online/Offline'){//if field is set to Online/Offline check
+                if(actionId==8){
+                  //check for connection outage
+                }
+              }
         			if(fieldId=='moisture'){//if field is set to moisture
         				if(actionId==1){
         					setSchedule(groupId, conditionValue);//
@@ -211,6 +216,32 @@ function setSchedule(groupId, threshold){ //actionId 1
 */
 function setScheduleAndNotify(groupId, threshold){ //actionId 2
 	//to be added later, via websocket
+}
+
+/******************************
+*function: connectionCheck(groupId)
+*input: takes groupId as a input
+*output; checks if the device is offline from a long time
+*
+*/
+function connectionCheck(groupId){ //actionId 2
+  var query='SELECT deviceId FROM devices where groupId='+groupId+'';//for sensor
+  connection.query(query, function(err, device, fields) { //insert into the table 
+    if (err) 
+      log.error("Error in checking device entry for moisture sensors in devices table"+err);
+    else{
+      if(device.length>0){
+        for (var j=0;j<device.length;j++)//going through all the macid
+          {
+            console.log('checking status for the device: '+device[j].deviceId);
+            deviceStatus(device[j].deviceId, function(status,row){
+              console.log('Status is '+status);
+
+            });
+          }
+      }
+    }
+  });
 }
 
 /******************************
@@ -474,7 +505,7 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
       //}
     };
 }
-/******************broadcast*****************/
+/******************send to websocket server*****************/
 function sendAll(jsonS){  //
   if(ws!=null){//sending data via websocket
     try{
@@ -490,3 +521,27 @@ function sendAll(jsonS){  //
     wsConnect();
 }
 //////////////////////////////////
+
+/******************************
+*function: deviceStatus(name, callback)
+*input: takes device_id from feeds
+*output; callback, returns the concerned status of the device in the deviceStatus
+*logic: check if theire is any previous entry of the deivce in deviceStatus table
+*also if the previous entry for the status was1
+*
+*/
+function deviceStatus(row, callback){
+    var devid='Select status from deviceStatus where deviceId=\''+row+'\' order by id desc limit 1';
+    connectionRemote.query(devid, function(err, drows, fields) { //update the table //query2
+      if (err)
+        log.error("MYSQL ERROR "+err);
+      else{
+        if(drows.length>0){
+          callback(drows[0].status,row);
+        }
+        else{//if no last row exists
+          callback(2,row);//2 is arbitrary, but should not be 0
+        }
+      }
+    });
+}
