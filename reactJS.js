@@ -235,8 +235,12 @@ function connectionCheck(groupId){ //actionId 2
         for (var j=0;j<device.length;j++)//going through all the macid
           {
             console.log('checking status for the device: '+device[j].deviceId);
-            deviceStatus(device[j].deviceId, function(status,row){
+            deviceStatus(device[j].deviceId, function(status, times, row){
               console.log('Status is '+status);
+              console.log('Time diff is '+times);
+              /*if(status==0){
+                if()
+              }*/
 
             });
           }
@@ -532,13 +536,13 @@ function sendAll(jsonS){  //
 *
 */
 function deviceStatus(row, callback){
-    var devid='Select status from deviceStatus where deviceId=\''+row+'\' order by id desc limit 1';
+    var devid='Select status, TIMEDIFF(now(),deviceStatus.created_At) as times from deviceStatus where deviceId=\''+row+'\' order by id desc limit 1';
     connection.query(devid, function(err, drows, fields) { //update the table //query2
       if (err)
         log.error("MYSQL ERROR "+err);
       else{
         if(drows.length>0){
-          callback(drows[0].status,row);
+          callback(drows[0].status, drows[0].times, row);
         }
         else{//if no last row exists
           callback(2,row);//2 is arbitrary, but should not be 0
