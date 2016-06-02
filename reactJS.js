@@ -243,7 +243,7 @@ function connectionCheck(groupId){ //actionId 2
               var seconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]); 
               console.log('Time diff is '+seconds);
               if(status==0){
-                if(seconds=>3600){
+                if(seconds>3600){
                   var query='UPDATE deviceNotif SET field6=1 where deviceId =\''+row+'\' ';//for sensor
                   connection.query(query, function(err, device, fields) { //insert into the table 
                     if (err) 
