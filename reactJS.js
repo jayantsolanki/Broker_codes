@@ -2,6 +2,13 @@
 var env = require('./settings');//importing settings file, environment variables
 ////initiating the bunyan log
 var Logger = require('bunyan');
+/***************Adding websocket feature*******/
+//var uuid = require('node-uuid');
+//var WebSocketServer = require('ws').Server,
+//    wss = new WebSocketServer({port: 8181});
+var WebSocket = require('ws');
+var ws=null;
+wsConnect();
 var log = new Logger({name:'ESP-Valve', 
          streams: [
     {
@@ -69,7 +76,7 @@ setInterval(function() {
 
         			if(fieldId=='battery'){//if field is set to battery
         				if(actionId==5){
-        					checkBattery(conditionValue);//call battery check, here the value is the time of the day when to check the battery
+        					checkBattery(groupId, conditionValue);//call battery check, here the value is the time of the day when to check the battery
         				}
         				if(actionId==6){//low primary battery
         					lowBattery(groupId, actionId, conditionValue);//check low battery for a group, based upon defined criteria
@@ -108,7 +115,7 @@ console.log('Done checking the task table');
 *output; sends signal to mosca-mysql-server via websocket to acivate battstatus() method
 *
 */
-function checkBattery(time){//actionId 5, thinking about battery check for specific group, but wont matter
+function checkBattery(groupId, time){//actionId 5, thinking about battery check for specific group, but wont matter
 	var date=new Date();
 	var currentTime=date.getHours()*100+date.getMinutes(); //HHmm format
 	if(currentTime==0000)
@@ -116,7 +123,14 @@ function checkBattery(time){//actionId 5, thinking about battery check for speci
 	if(currenttime==time){//check battery status at every given time
 		if(flag==1){
 			//use websocket for checking battery
-			log.info("Requested for battery status from every device");
+      var jsonS={
+       "check":'battery',
+       "groupId":groupId,//0 for all device
+       "payload":2
+       };
+      sendAll(jsonS);//sending button status to all device
+      
+			log.info("Requested for battery status for groupId: "+groupId);
 		}
 	}
 }
@@ -426,3 +440,52 @@ function checkSchedule(groupId, check){//actionId 4
 
 	}
 }
+
+/**************************************Websocket con*********************************/
+function wsConnect() {//creating a websocket connection to the mosca-mysql-server.js for transfering the sensor value to the latter script
+    ws = new WebSocket("ws://10.129.139.139:8180");
+    ws.onopen = function() {
+      log.info('connected to websocket server');
+    };
+   /* ws.onmessage = function(msg) {
+      console.log(msg);
+    };
+*/
+    ws.onclose = function(evt) {
+      if (evt.code == 3110) {
+        log.error('ws closed');
+        ws = null;
+      } 
+      else {
+        ws = null;
+        console.log('ws connection error');
+        var jsonS={
+             "action":'Error',
+             "data"  :"unable to send the sensor data, reconnecting to mosca-mysql-server"
+        };
+        sendAll(jsonS);//sending button status to all device
+      }
+    };
+
+    ws.onerror = function(evt) {
+      //if (ws.readyState == 1) {
+       console.log('ws normal error: ' + evt.type);
+      //}
+    };
+}
+/******************broadcast*****************/
+function sendAll(jsonS){  //
+  if(ws!=null){//sending data via websocket
+    try{
+      ws.send(JSON.stringify(jsonS));
+    }
+    catch(e){
+      //wsConnect();
+      log.error('error in sending the websocket data');
+      wsConnect();
+    }
+  }
+  else
+    wsConnect();
+}
+//////////////////////////////////
