@@ -533,7 +533,7 @@ function sendAll(jsonS){  //
 */
 function deviceStatus(row, callback){
     var devid='Select status from deviceStatus where deviceId=\''+row+'\' order by id desc limit 1';
-    connectionRemote.query(devid, function(err, drows, fields) { //update the table //query2
+    connection.query(devid, function(err, drows, fields) { //update the table //query2
       if (err)
         log.error("MYSQL ERROR "+err);
       else{
