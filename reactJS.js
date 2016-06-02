@@ -88,6 +88,7 @@ setInterval(function() {
               if(fieldId=='Online/Offline'){//if field is set to Online/Offline check
                 if(actionId==8){
                   //check for connection outage
+                  connectionCheck(groupId);
                 }
               }
         			if(fieldId=='moisture'){//if field is set to moisture
