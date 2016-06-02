@@ -304,7 +304,7 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
   					        	log.info("Battery status updated for sensor in deviceNotif table, set to adverse");// need to change the whole code
   					        }
           				});
-          				var sensorBat='UPDATE deviceNotif SET field1=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3<\''+conditionValue+'\')';
+          				var sensorBat='UPDATE deviceNotif SET field1=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3>\''+conditionValue+'\')';
           				connection.query(sensorBat, function(err, rows, fields) {
           					if (err) 
   					          log.error("Error in checking feeds entry in devices table"+err);
