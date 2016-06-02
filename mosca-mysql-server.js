@@ -52,7 +52,7 @@ var serialPort = new SerialPort(env.portNo, {
   baudrate: 9600
 })*/
 /////////////////
-var id, start,stop,action,currentime, item, macid, type, flag=1;
+var id, start,stop,action,currentime, item, macid, type; //flag=1;
 //mqtt config
 var mqtt    = require('mqtt');
 var mqttaddress=env.mqtt;
@@ -354,7 +354,7 @@ function setup() {
             var date=new Date();
             currenttime=date.getHours()*100+date.getMinutes();
             //console.log('current time is ',currenttime);
-            if(currenttime==0000)
+            /*if(currenttime==0000)
               flag=1; 
             if(currenttime==1200 || currenttime==1200)//check battery status at every 6:30pm
             {
@@ -369,7 +369,7 @@ function setup() {
                 sendAll(jsonS);//sending button status to all device
               }
               flag=0;
-            }
+            }*/
            //group=null;
             //if(macid==null)
             //console.log('global group  is '+group+ '----'+i);
@@ -653,7 +653,7 @@ wss.on('connection', function(ws) {
     {
       //if(response.device==0)
       battstatus(response.groupId);
-      log.info('Client requested battery status from ESP devices');
+      log.info('ReactJS requested battery status from ESP groupId '+response.groupId);
       var jsonS={
            "action":'battery check from reactJS for groupId'+response.groupId,
            "data"  :"Client requested for battery status"

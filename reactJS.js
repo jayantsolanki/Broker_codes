@@ -131,6 +131,7 @@ function checkBattery(groupId, time){//actionId 5, thinking about battery check 
       sendAll(jsonS);//sending button status to all device
       
 			log.info("Requested for battery status for groupId: "+groupId);
+      flag=0;
 		}
 	}
 }
@@ -314,17 +315,17 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
           				connection.query(sensorBat, function(err, rows, fields) {
           					if (err) 
   					          log.error("Error in checking feeds entry in devices table"+err);
-  					        else{
-  					        	log.info("Battery status updated for sensor in deviceNotif table, set to adverse");// need to change the whole code
-  					        }
+  					        // else{
+  					        // 	log.info("Battery status updated for sensor in deviceNotif table, set to adverse");// need to change the whole code
+  					        // }
           				});
           				var sensorBat='UPDATE deviceNotif SET field1=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3>\''+conditionValue+'\')';
           				connection.query(sensorBat, function(err, rows, fields) {
           					if (err) 
   					          log.error("Error in checking feeds entry in devices table"+err);
-  					        else{
+  					       /* else{
   					        	log.info("Battery status updated for sensor in deviceNotif table, set to healthy");// need to change the whole code
-  					        }
+  					        }*/
           				});
           			}
                 if(type==1){//primary battery for valves
@@ -334,17 +335,17 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                   connection.query(sensorBat, function(err, rows, fields) {
                     if (err) 
                       log.error("Error in checking feeds entry in devices table"+err);
-                    else{
-                      log.info("Battery status updated for valves in deviceNotif table, set to adverse");// need to change the whole code
-                    }
+                    // else{
+                    //   log.info("Battery status updated for valves in deviceNotif table, set to adverse");// need to change the whole code
+                    // }
                   });
                   var sensorBat='UPDATE deviceNotif SET field1=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field2 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field2>\''+conditionValue+'\')';
                   connection.query(sensorBat, function(err, rows, fields) {
                     if (err) 
                       log.error("Error in checking feeds entry in devices table"+err);
-                    else{
+                   /* else{
                       log.info("Battery status updated for valves in deviceNotif table, set to healthy");// need to change the whole code
-                    }
+                    }*/
                   });
                 }
               }
@@ -353,17 +354,17 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                   connection.query(sensorBat, function(err, rows, fields) {
                     if (err) 
                       log.error("Error in checking feeds entry in devices table"+err);
-                    else{
+                    /*else{
                       log.info("Secondary Battery status updated for valves in deviceNotif table, set to adverse");// need to change the whole code
-                    }
+                    }*/
                   });
                   var sensorBat='UPDATE deviceNotif SET field2=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3>'+conditionValue+')';
                   connection.query(sensorBat, function(err, rows, fields) {
                     if (err) 
                       log.error("Error in checking feeds entry in devices table"+err);
-                    else{
+                    /*else{
                       log.info("Secondary Battery status updated for valves in deviceNotif table, set to healthy");// need to change the whole code
-                    }
+                    }*/
                   });
               }
 
