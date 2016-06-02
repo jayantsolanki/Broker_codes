@@ -297,7 +297,7 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
               if(actionId==6){
           			if(type==2){//primary battery for sensors
           				var sensorBat='UPDATE deviceNotif SET field1=\'1\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3<\''+conditionValue+'\')';
-          				connection.query(query, function(err, sensorBat, fields) {
+          				connection.query(sensorBat, function(err, rows, fields) {
           					if (err) 
   					          log.error("Error in checking feeds entry in devices table"+err);
   					        else{
@@ -305,7 +305,7 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
   					        }
           				});
           				var sensorBat='UPDATE deviceNotif SET field1=\'0\' where deviceId in (SELECT device_id FROM (SELECT device_id, field3 FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE field3<\''+conditionValue+'\')';
-          				connection.query(query, function(err, sensorBat, fields) {
+          				connection.query(sensorBat, function(err, rows, fields) {
           					if (err) 
   					          log.error("Error in checking feeds entry in devices table"+err);
   					        else{
