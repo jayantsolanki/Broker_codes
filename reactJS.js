@@ -237,7 +237,11 @@ function connectionCheck(groupId){ //actionId 2
             console.log('checking status for the device: '+device[j].deviceId);
             deviceStatus(device[j].deviceId, function(status, times, row){
               console.log('Status is '+status);
-              console.log('Time diff is '+times);
+              
+              var a = times.split(':'); // split it at the colons
+              // minutes are worth 60 seconds. Hours are worth 60 minutes.
+              var seconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]); 
+              console.log('Time diff is '+seconds);
               /*if(status==0){
                 if()
               }*/
