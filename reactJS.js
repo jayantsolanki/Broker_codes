@@ -120,7 +120,7 @@ function checkBattery(groupId, time){//actionId 5, thinking about battery check 
 	var currentTime=date.getHours()*100+date.getMinutes(); //HHmm format
 	if(currentTime==0000)
 		flag=1;
-	if(currenttime==time){//check battery status at every given time
+	if(currentTime==time){//check battery status at every given time
 		if(flag==1){
 			//use websocket for checking battery
       var jsonS={
