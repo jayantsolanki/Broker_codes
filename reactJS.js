@@ -622,7 +622,7 @@ function highTemperature(groupId){ //actionId 7
 function checkSchedule(groupId, check){//actionId 4
 	if(check==1){//setup a schedule
     console.log('Group id is '+groupId);
-		var checkS='SELECT EXISTS(SELECT * FROM tasks WHERE type=2 and groupId='+groupId+' as find';//check if an automated schedule exists beforehand
+		var checkS='SELECT EXISTS(SELECT * FROM tasks WHERE type=2 and groupId='+groupId+') as find';//check if an automated schedule exists beforehand
       	connection.query(checkS, function(err, rows, fields) {      
 	        if (err) 
 	        log.error("MYSQL ERROR in checking the schedules"+err);
