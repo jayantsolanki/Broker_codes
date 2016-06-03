@@ -79,7 +79,7 @@ setInterval(function() {
           server=1;//prevent from reoccuring
         }
         else{
-          log.error('Tweet error in Server Outage Posting: '+error);
+          log.error('Tweet error in Server Outage Posting: ',error);
         }
       });
       wsConnect();
