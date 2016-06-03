@@ -78,15 +78,15 @@ setInterval(function() {
       Tclient.post('statuses/update', {status: "CRITICAL: Mosca server went Offline, please contact Admin, time "+time}, function(error, tweet, response) {
         if (!error) {
           console.log('Mosca Connection breakage Tweet posted');
-          server=1;//prevent from reoccuring
+          
         }
         else{
           log.error('Tweet error in Server Outage Posting: ',error);
         }
       });
-      
-      wsConnect();
+      server=1;//prevent from reoccuring
     }
+    wsConnect();
   }
   connection.query(reactS, function(err, react, fields) { //insert into the table 
       if (err) 
