@@ -623,7 +623,7 @@ function deviceStatus(row, callback){
 *
 */
 function deviceFeed(deviceId, field, threshold, callback){
-    var devid='SELECT device_id FROM (SELECT device_id, '+field+' FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE '+field+'<\''+threshold+'\'';
+    var devid='SELECT device_id FROM (SELECT device_id, '+field+' FROM feeds WHERE device_id=\''+deviceId+'\' ORDER BY id DESC LIMIT 1) as temp WHERE '+field+'<'+threshold;
     connection.query(devid, function(err, drows, fields) { //update the table //query2
       if (err)
         log.error("MYSQL ERROR "+err);
