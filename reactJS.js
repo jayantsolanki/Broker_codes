@@ -176,7 +176,7 @@ function checkBattery(groupId, time){//actionId 5, thinking about battery check 
 *
 */
 function setSchedule(groupId, threshold){ //actionId 1
-	var query='SELECT deviceId, field1 FROM devices where groupId='+groupId+'';//for sensor
+	var query='SELECT deviceId, field1 FROM devices where groupId='+groupId+'';//for sensor, assumed here only one sensor in one group
 	connection.query(query, function(err, device, fields) { //insert into the table 
         if (err) 
           log.error("Error in checking device entry for moisture sensors in devices table"+err);
@@ -187,21 +187,31 @@ function setSchedule(groupId, threshold){ //actionId 1
         			var field1=device[0]['field1'];//for checking if it is bthm, bm, or something else
         			//convert conditionValue into respective ADC value
         			if(field1=='bm'){
-        				var sensorMoist='SELECT CAST(AVG(field4) as UNSIGNED) as value FROM (SELECT field4 FROM feeds WHERE device_id =\''+deviceId+'\' and field4<\'4096\' ORDER BY id desc limit 5) as temp';
+        				var sensorMoist='SELECT CAST(AVG(field4) as UNSIGNED) as value FROM (SELECT field4 FROM feeds WHERE device_id =\''+deviceId+'\' and field4<\'4095\' ORDER BY id desc limit 5) as temp';
         				connection.query(sensorMoist, function(err, sensorMoistV, fields) {
         					if (err) 
 					          log.error("Error in checking feeds entry for Moisture in devices table"+err);
 					        else{
 					        	var value=sensorMoistV[0]['value'];
-					        	if(value<=threshold){//if lower than threshold
+					        	if(value>=threshold){//if lower than threshold, more adc value less moisture
 					        		checkSchedule(groupId, 1);//check schedule, if necessary to setup
-					        		var updatereactJS='UPDATE reactJS SET active=1 where deviceId =\''+deviceId+'\' ';//updating the reactJS table
+                      var updateNotif='UPDATE deviceNotif SET field2=1 where deviceId =\''+deviceId+'\' ';//updating the deviceNotif table, low moisture
+                      connection.query(updateNotif, function(err, row, fields) {
+                        if (err) 
+                          log.error("Error in updating the deviceNotif table"+err);
+                        else{
+                          if(row.changedRows==1){
+                            log.info("Moisture status updated for sensor "+deviceId+" in deviceNotif table, set to low");
+                          }
+                        }
+                      });
+					        		/*var updatereactJS='UPDATE reactJS SET active=1 where deviceId =\''+deviceId+'\' ';//updating the reactJS table
 					        		connection.query(updatereactJS, function(err, row, fields) {
 			        					if (err) 
 								        	log.error("Error in updating the reactJS table"+err);
 								        else{
 								        	log.info("ReactJS column for moisture marked active");
-								        	var updateNotif='UPDATE deviceNotif SET field2=1 where deviceId =\''+deviceId+'\' ';//updating the deviceNotif table
+								        	var updateNotif='UPDATE deviceNotif SET field2=1 where deviceId =\''+deviceId+'\' ';//updating the deviceNotif table, low moisture
 							        		connection.query(updateNotif, function(err, row, fields) {
 					        					if (err) 
 										          log.error("Error in updating the deviceNotif table"+err);
@@ -210,10 +220,10 @@ function setSchedule(groupId, threshold){ //actionId 1
 										        }
 					        				});
 								        }
-			        				});
+			        				});*/
 					        		
 					        	}
-					        	if(value>threshold){//if greater than threshold
+					        	/*if(value>threshold){//if greater than threshold
 					        		var updatereactJS='UPDATE reactJS SET active=0 where deviceId =\''+deviceId+'\' ';;//updating the reactJS table
 					        		connection.query(updatereactJS, function(err, row, fields) {
 			        					if (err) 
@@ -222,8 +232,8 @@ function setSchedule(groupId, threshold){ //actionId 1
 								        	log.info("ReactJS column for moisture marked inactive");
 								        }
 			        				});
-					        	}
-					        }
+					        	}*/
+					        }//end of else
         				});
         			}
 
@@ -366,9 +376,19 @@ function stopSchedule(groupId, threshold){//actionId 3
 					          log.error("Error in checking feeds entry for Moisture in devices table"+err);
 					        else{
 					        	var value=sensorMoistV[0]['value'];
-					        	if(value>=threshold){//if lower than threshold
+					        	if(value<=threshold){//if greater than threshold, less adc value more moisture
 					        		checkSchedule(groupId, 0);//check schedule, if necessary to stop a schedule
-					        		var updatereactJS='UPDATE reactJS SET active=1 where deviceId =\''+deviceId+'\' ';//updating the reactJS table
+                      var updateNotif='UPDATE deviceNotif SET field2=0 where deviceId =\''+deviceId+'\' ';//updating the deviceNotif table
+                      connection.query(updateNotif, function(err, row, fields) {
+                        if (err) 
+                          log.error("Error in updating the deviceNotif table"+err);
+                        else{
+                          if(device.changedRows==1){
+                            log.info("Moisture status updated in deviceNotif table, set to normal");
+                          }
+                        }
+                      });
+					        		/*var updatereactJS='UPDATE reactJS SET active=1 where deviceId =\''+deviceId+'\' ';//updating the reactJS table
 					        		connection.query(updatereactJS, function(err, row, fields) {
 			        					if (err) 
 								        	log.error("Error in updating the reactJS table"+err);
@@ -383,10 +403,10 @@ function stopSchedule(groupId, threshold){//actionId 3
 										        }
 					        				});
 								        }
-			        				});
+			        				});*/
 					        		
 					        	}
-					        	if(value<threshold){//if greater than threshold
+					        	/*if(value<threshold){//if greater than threshold
 					        		var updatereactJS='UPDATE reactJS SET active=0 where deviceId =\''+deviceId+'\' ';;//updating the reactJS table
 					        		connection.query(updatereactJS, function(err, row, fields) {
 			        					if (err) 
@@ -395,7 +415,7 @@ function stopSchedule(groupId, threshold){//actionId 3
 								        	log.info("ReactJS column for moisture marked inactive");
 								        }
 			        				});
-					        	}
+					        	}*/
 					        }
         				});
         			}
@@ -600,7 +620,7 @@ function highTemperature(groupId){ //actionId 7
 */
 function checkSchedule(groupId, check){//actionId 4
 	if(check==1){//setup a schedule
-		var checkS='SELECT EXISTS(SELECT * FROM tasks WHERE type=2 and groupId='+groupId+' as find';//check if an automated schedule exists before hand
+		var checkS='SELECT EXISTS(SELECT * FROM tasks WHERE type=2 and groupId=\''+groupId+'\' as find';//check if an automated schedule exists beforehand
       	connection.query(checkS, function(err, rows, fields) {      
 	        if (err) 
 	        log.error("MYSQL ERROR in checking the schedules"+err);
@@ -613,9 +633,9 @@ function checkSchedule(groupId, check){//actionId 4
 	              	if(date.getHours()*100>=2300)
 	              		stopTime=0+date.getMinutes();
 	              	else
-	              		stopTime=date.getHours()*100+100+date.getMinutes();
+	              		stopTime=date.getHours()*100+100+date.getMinutes();//for 60 minutes
 
-	                var setSchedule='INSERT INTO tasks (groupId,start, stop, action, type, active) VALUES ('+groupId+',\''+startTime+'\',\''+stopTime+'\',1,2,2)';
+	                var setSchedule='INSERT INTO tasks (groupId,start, stop, action, type, active) VALUES (\''+groupId+'\',\''+startTime+'\',\''+stopTime+'\',1,2,2)';
 	                connection.query(setSchedule, function(err, rows, fields) { //insert into the table 
 	                  if (err) 
 	                    log.error("MYSQL ERROR in setting up the schedule"+err);
@@ -626,7 +646,7 @@ function checkSchedule(groupId, check){//actionId 4
 	            }
 	          
 	            else{
-	              log.info('Do nothing, schedule already exists');
+	              log.info('Do nothing, schedule already exists');//actually here existing automated schedule should be updated with the new time
 	            }
 	        }
       });
@@ -636,7 +656,7 @@ function checkSchedule(groupId, check){//actionId 4
 		var date=new Date;
 	    var stopTime=date.getHours()*100+date.getMinutes(); //HHmm format
 		var updateSchedule='UPDATE tasks SET stop=\''+stopTime+'\' WHERE type=2 and groupId='+groupId+' ';//update the stop time of the automated task for the group, if its exists
-      	connection.query(updateSchedule, function(err, rows, fields) {
+      	connection.query(updateSchedule, function(err, rows, fields) {//actually here type may be changed to 0, to delete the task after it is stopped
       		if (err) 
             	log.error("MYSQL ERROR in updating the Schedule"+err);
           	else{
