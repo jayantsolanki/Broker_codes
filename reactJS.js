@@ -650,12 +650,14 @@ function checkSchedule(groupId, check){//actionId 4
 /**************************************Websocket con*********************************/
 function wsConnect() {//creating a websocket connection to the mosca-mysql-server.js for transfering the sensor value to the latter script
     ws = new WebSocket("ws://10.129.139.139:8180");
+    console.log('Iam inside and entering');
     ws.onopen = function() {
       log.info('connected to websocket server');
       console.log('Iam outside', server);
       if(server==1){
         console.log('Iam inside');
-        Tclient.post('statuses/update', {status: 'Mosca server back online'}, function(error, tweet, response) {
+        var time2=new Date();
+        Tclient.post('statuses/update', {status: 'Mosca server back online, time '+time2}, function(error, tweet, response) {
           if (!error) {
             console.log('Mosca Connection reestablished Tweet posted');
           }
