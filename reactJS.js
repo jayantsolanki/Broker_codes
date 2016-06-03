@@ -66,10 +66,25 @@ var localdb_config={
 var connection = mysql.createConnection(localdb_config);
 connection.connect();//general
 /////////////////////
-var groupId, fieldId, condition, conditionValue, actionId, active, flag=1;//flag is for battery, for once in a day
+var groupId, fieldId, condition, conditionValue, actionId, active, server=0, flag=1;//flag is for battery, for once in a day
 var reactS="SELECT * FROM reactJS WHERE activated!=0";
 var the_interval = 5000;
 setInterval(function() {
+  if(ws==null){
+    log.error("Mosca Server Outage");
+    if(server==0){//send message to Twitter
+      Tclient.post('statuses/update', {status: 'CRITICAL: Mosca server went Offline, please contact Admin'}, function(error, tweet, response) {
+        if (!error) {
+          console.log(' Mosca Connection breakage Tweet posted');
+          server=1;//prevent from reoccuring
+        }
+        else{
+          log.error('Tweet error: '+error);
+        }
+      });
+      wsConnect();
+    }
+  }
 	  connection.query(reactS, function(err, react, fields) { //insert into the table 
         if (err) 
           log.error("Error in checking react entry in reactJS table"+err);
@@ -634,6 +649,18 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
     ws = new WebSocket("ws://10.129.139.139:8180");
     ws.onopen = function() {
       log.info('connected to websocket server');
+      if(server==1){
+        Tclient.post('statuses/update', {status: 'Mosca server back online'}, function(error, tweet, response) {
+          if (!error) {
+            console.log(' Mosca Connection reestablished Tweet posted');
+            server=1;//prevent from reoccuring
+          }
+          else{
+            log.error('Tweet error: '+error);
+          }
+        });
+      }
+      server=0;
     };
    /* ws.onmessage = function(msg) {
       console.log(msg);
@@ -647,10 +674,10 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
       else {
         ws = null;
         console.log('ws connection error');
-        var jsonS={
+        /*var jsonS={
              "action":'Error',
              "data"  :"unable to send the sensor data, reconnecting to mosca-mysql-server"
-        };
+        };*/
         //sendAll(jsonS);//sending button status to all device
       }
     };
