@@ -687,6 +687,7 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
     ws.onerror = function(evt) {
       //if (ws.readyState == 1) {
        console.log('ws normal error: ' + evt.type);
+       ws=null;
       //}
     };
 }
