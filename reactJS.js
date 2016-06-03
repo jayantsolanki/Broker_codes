@@ -259,6 +259,9 @@ function connectionCheck(groupId){ //actionId 2
                       log.error("Error is updating offline status of the deviceNotif table "+err);
                     else{
                       //console.log('Offline status updated for device '+row);
+                      if(device.changedRows==1){//post only if row is changed,, 0 to 1
+                        log.info('Device '+row+' is unable to connect to the Network');// 
+                      }
                       Tclient.post('statuses/update', {status: 'Device '+row+' is unable to connect to the Network'}, function(error, tweet, response) {
                         if (!error) {
                           console.log('Tweet posted');
@@ -272,9 +275,11 @@ function connectionCheck(groupId){ //actionId 2
                   connection.query(query, function(err, device, fields) { //insert into the table 
                     if (err) 
                       log.error("Error is updating offline status of the deviceNotif table "+err);
-                    /*else{
-                      console.log('Offline status updated for device '+row);
-                    }*/
+                    else{
+                      if(device.changedRows==1){//post only if row is changed,, 0 to 1
+                        log.info('Device '+row+' is back in the Network');// 
+                      }
+                    }
                   });
                 }
 
@@ -284,9 +289,11 @@ function connectionCheck(groupId){ //actionId 2
                 connection.query(query, function(err, device, fields) { //insert into the table 
                   if (err) 
                     log.error("Error is updating offline status of the deviceNotif table "+err);
-                  /*else{
-                    console.log('Offline status updated for device '+row);
-                  }*/
+                  else{
+                    if(device.changedRows==1){//post only if row is changed,, 0 to 1
+                      log.info('Device '+row+' is back in the Network');// 
+                    }
+                  }
                 });
               }
 
@@ -334,7 +341,7 @@ function stopSchedule(groupId, threshold){//actionId 3
 					        					if (err) 
 										          log.error("Error in updating the deviceNotif table"+err);
 										        else{
-										        	log.info("Mositure status updated in deviceNotif table, set to normal");
+										        	log.info("Moisture status updated in deviceNotif table, set to normal");
 										        }
 					        				});
 								        }
@@ -401,9 +408,11 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                       connection.query(sensorBat, function(err, rows, fields) {
                         if (err) 
                           log.error("Error in checking feeds entry in devices table"+err);
-                        // else{
-                        //  log.info("Battery status updated for sensor in deviceNotif table, set to adverse");// need to change the whole code
-                        // }
+                         else{
+                          if(rows.changedRows==1){//post only if row is changed,, 0 to 1
+                            log.info("Battery status updated for sensor in deviceNotif table, set to adverse ", rows.changedRows);// need to change the whole code
+                          }
+                         }
                       });
                     }
                     else if(status==0){//device battery is normal
@@ -411,9 +420,11 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                       connection.query(sensorBat, function(err, rows, fields) {
                         if (err) 
                           log.error("Error in checking feeds entry in devices table"+err);
-                       /* else{
-                          log.info("Battery status updated for sensor in deviceNotif table, set to healthy");// need to change the whole code
-                        }*/
+                        else{
+                          if(rows.changedRows==1){//post only if row is changed,, 1 to 0
+                            log.info("Battery status updated for sensor in deviceNotif table, set to healthy ", rows.changedRows);// need to change the whole code
+                          }
+                        }
                       });
                     }
                   });//deviceFeed check ends here
@@ -425,9 +436,11 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                       connection.query(sensorBat, function(err, rows, fields) {
                         if (err) 
                           log.error("Error in checking feeds entry in devices table"+err);
-                        // else{
-                        //  log.info("Battery status updated for sensor in deviceNotif table, set to adverse");// need to change the whole code
-                        // }
+                         else{
+                          if(rows.changedRows==1){//post only if row is changed,, 0 to 1
+                            log.info("Battery status updated for sensor in deviceNotif table, set to adverse ", rows.changedRows);// need to change the whole code
+                          }
+                         }
                       });
                     }
                     else if(status==0){//device battery is normal
@@ -435,9 +448,11 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                       connection.query(sensorBat, function(err, rows, fields) {
                         if (err) 
                           log.error("Error in checking feeds entry in devices table"+err);
-                       /* else{
-                          log.info("Battery status updated for sensor in deviceNotif table, set to healthy");// need to change the whole code
-                        }*/
+                        else{
+                          if(rows.changedRows==1){//post only if row is changed,, 1 to 0
+                            log.info("Battery status updated for sensor in deviceNotif table, set to healthy ", rows.changedRows);// need to change the whole code
+                          }
+                        }
                       });
                     }
                   });//deviceFeed check ends here
@@ -451,7 +466,9 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                       if (err) 
                         log.error("Error in checking feeds entry in devices table"+err);
                        else{
-                        log.info("Battery status updated for sensor in deviceNotif table, set to adverse ", rows.changedRows);// need to change the whole code
+                        if(rows.changedRows==1){//post only if row is changed,, 0 to 1
+                          log.info("Battery status updated for sensor in deviceNotif table, set to adverse ", rows.changedRows);// need to change the whole code
+                        }
                        }
                     });
                   }
@@ -461,7 +478,9 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                       if (err) 
                         log.error("Error in checking feeds entry in devices table"+err);
                       else{
-                        log.info("Battery status updated for sensor in deviceNotif table, set to healthy");// need to change the whole code
+                        if(rows.changedRows==1){//post only if row is changed,, 1 to 0
+                          log.info("Battery status updated for sensor in deviceNotif table, set to healthy ", rows.changedRows);// need to change the whole code
+                        }
                       }
                     });
                   }
