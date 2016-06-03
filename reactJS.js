@@ -73,6 +73,7 @@ setInterval(function() {
   if(ws==null){
     log.error("Mosca Server Outage");
     if(server==0){//send message to Twitter
+      log.error("Mosca Server Outage insode");
       Tclient.post('statuses/update', {status: "CRITICAL: Mosca server went Offline, please contact Admin"}, function(error, tweet, response) {
         if (!error) {
           console.log(' Mosca Connection breakage Tweet posted');
@@ -86,57 +87,57 @@ setInterval(function() {
       wsConnect();
     }
   }
-	  connection.query(reactS, function(err, react, fields) { //insert into the table 
-        if (err) 
-          log.error("Error in checking react entry in reactJS table"+err);
-        else{
-        	if(react.length>0){
-        		for(var i=0; i<react.length; i++){
-        			var groupId=react[i]['groupId'];
-        			var fieldId=react[i]['fieldId'];
-        			var condition=react[i]['condition'];
-        			var conditionValue=react[i]['conditionValue'];
-        			var actionId=react[i]['actionId'];
-        			var active=react[i]['active'];
+  connection.query(reactS, function(err, react, fields) { //insert into the table 
+      if (err) 
+        log.error("Error in checking react entry in reactJS table"+err);
+      else{
+      	if(react.length>0){
+      		for(var i=0; i<react.length; i++){
+      			var groupId=react[i]['groupId'];
+      			var fieldId=react[i]['fieldId'];
+      			var condition=react[i]['condition'];
+      			var conditionValue=react[i]['conditionValue'];
+      			var actionId=react[i]['actionId'];
+      			var active=react[i]['active'];
 
-        			if(fieldId=='battery'){//if field is set to battery
-        				if(actionId==5){
-        					checkBattery(groupId, conditionValue);//call battery check, here the value is the time of the day when to check the battery
-        				}
-        				if(actionId==6){//low primary battery
-        					lowBattery(groupId, actionId, conditionValue);//check low battery for a group, based upon defined criteria
-        				}
-                if(actionId==9){//low secondary battery
-                  lowBattery(groupId, actionId, conditionValue);//check low battery for a group, based upon defined criteria
-                }
-        			}
-              if(fieldId=='Online/Offline'){//if field is set to Online/Offline check
-                if(actionId==8){
-                  //check for connection outage
-                  connectionCheck(groupId);
-                }
+      			if(fieldId=='battery'){//if field is set to battery
+      				if(actionId==5){
+      					checkBattery(groupId, conditionValue);//call battery check, here the value is the time of the day when to check the battery
+      				}
+      				if(actionId==6){//low primary battery
+      					lowBattery(groupId, actionId, conditionValue);//check low battery for a group, based upon defined criteria
+      				}
+              if(actionId==9){//low secondary battery
+                lowBattery(groupId, actionId, conditionValue);//check low battery for a group, based upon defined criteria
               }
-        			if(fieldId=='moisture'){//if field is set to moisture
-        				if(actionId==1){
-        					setSchedule(groupId, conditionValue);//
-        				}
-        				if(actionId==2){
-        					setScheduleAndNotify(groupId, conditionValue);//experimental
-        				}
-        				if(actionId==3){
-        					stopSchedule(groupId, conditionValue);//
-        				}
-        				if(actionId==4){
-        					stopScheduleAndNotify(groupId, conditionValue);//experimental
-                }
-        			}
+      			}
+            if(fieldId=='Online/Offline'){//if field is set to Online/Offline check
+              if(actionId==8){
+                //check for connection outage
+                connectionCheck(groupId);
+              }
+            }
+      			if(fieldId=='moisture'){//if field is set to moisture
+      				if(actionId==1){
+      					setSchedule(groupId, conditionValue);//
+      				}
+      				if(actionId==2){
+      					setScheduleAndNotify(groupId, conditionValue);//experimental
+      				}
+      				if(actionId==3){
+      					stopSchedule(groupId, conditionValue);//
+      				}
+      				if(actionId==4){
+      					stopScheduleAndNotify(groupId, conditionValue);//experimental
+              }
+      			}
 
 
-        		}//main loop ends
+      		}//main loop ends
 
-        	}//react length check
-        }
-      });
+      	}//react length check
+      }
+    });
 //console.log('Done checking the task table');
 }, the_interval);
 
