@@ -72,11 +72,12 @@ var the_interval = 5000;
 setInterval(function() {
   if(ws==null){
     log.error("Mosca Server Outage", server);
+    var time=new Date();
     if(server==0){//send message to Twitter
       log.error("Mosca Server Outage inside", server);
-      Tclient.post('statuses/update', {status: "CRITICAL: Mosca server went Offline, please contact Admin"}, function(error, tweet, response) {
+      Tclient.post('statuses/update', {status: "CRITICAL: Mosca server went Offline, please contact Admin, time "+time}, function(error, tweet, response) {
         if (!error) {
-          console.log(' Mosca Connection breakage Tweet posted');
+          console.log('Mosca Connection breakage Tweet posted');
           
         }
         else{
