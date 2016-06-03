@@ -651,10 +651,10 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
     ws.onopen = function() {
       log.info('connected to websocket server');
       if(server==1){
+        console.log('Iam inside');
         Tclient.post('statuses/update', {status: 'Mosca server back online'}, function(error, tweet, response) {
           if (!error) {
             console.log('Mosca Connection reestablished Tweet posted');
-            server=1;//prevent from reoccuring
           }
           else{
             log.error('Tweet error: '+error);
