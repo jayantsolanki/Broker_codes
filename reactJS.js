@@ -71,9 +71,9 @@ var reactS="SELECT * FROM reactJS WHERE activated!=0";
 var the_interval = 5000;
 setInterval(function() {
   if(ws==null){
-    log.error("Mosca Server Outage");
+    log.error("Mosca Server Outage", server);
     if(server==0){//send message to Twitter
-      log.error("Mosca Server Outage insode");
+      log.error("Mosca Server Outage inside", server);
       Tclient.post('statuses/update', {status: "CRITICAL: Mosca server went Offline, please contact Admin"}, function(error, tweet, response) {
         if (!error) {
           console.log(' Mosca Connection breakage Tweet posted');
