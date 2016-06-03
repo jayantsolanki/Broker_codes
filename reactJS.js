@@ -456,7 +456,7 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                     });
                   }
                   else if(status==0){//device battery is normal
-                    var sensorBat='UPDATE deviceNotif SET field=\'0\' where deviceId=\''+row+'\'';
+                    var sensorBat='UPDATE deviceNotif SET field2=\'0\' where deviceId=\''+row+'\'';
                     connection.query(sensorBat, function(err, rows, fields) {
                       if (err) 
                         log.error("Error in checking feeds entry in devices table"+err);
