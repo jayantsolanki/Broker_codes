@@ -73,13 +73,13 @@ setInterval(function() {
   if(ws==null){
     log.error("Mosca Server Outage");
     if(server==0){//send message to Twitter
-      Tclient.post('statuses/update', {status: 'CRITICAL: Mosca server went Offline, please contact Admin'}, function(error, tweet, response) {
+      Tclient.post('statuses/update', {status: "CRITICAL: Mosca server went Offline, please contact Admin"}, function(error, tweet, response) {
         if (!error) {
           console.log(' Mosca Connection breakage Tweet posted');
           server=1;//prevent from reoccuring
         }
         else{
-          log.error('Tweet error: '+error);
+          log.error('Tweet error in Server Outage Posting: '+error);
         }
       });
       wsConnect();
