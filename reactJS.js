@@ -450,9 +450,9 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                     connection.query(sensorBat, function(err, rows, fields) {
                       if (err) 
                         log.error("Error in checking feeds entry in devices table"+err);
-                      // else{
-                      //  log.info("Battery status updated for sensor in deviceNotif table, set to adverse");// need to change the whole code
-                      // }
+                       else{
+                        log.info("Battery status updated for sensor in deviceNotif table, set to adverse");// need to change the whole code
+                       }
                     });
                   }
                   else if(status==0){//device battery is normal
@@ -460,9 +460,9 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                     connection.query(sensorBat, function(err, rows, fields) {
                       if (err) 
                         log.error("Error in checking feeds entry in devices table"+err);
-                     /* else{
+                      else{
                         log.info("Battery status updated for sensor in deviceNotif table, set to healthy");// need to change the whole code
-                      }*/
+                      }
                     });
                   }
                 });//deviceFeed check ends here
