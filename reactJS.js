@@ -261,7 +261,7 @@ function connectionCheck(groupId){ //actionId 2
                       //console.log('Offline status updated for device '+row);
                       if(device.changedRows==1){//post only if row is changed,, 0 to 1
                         log.info('Device '+row+' is unable to connect to the Network');// 
-                        Tclient.post('statuses/update', {status: 'Device '+row+' is unable to connect to the Network'}, function(error, tweet, response) {
+                        Tclient.post('statuses/update', {status: 'Device  is unable to connect to the Network'}, function(error, tweet, response) {
                           if (!error) {
                             console.log('Connection breakage Tweet posted');
                           }
