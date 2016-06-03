@@ -121,7 +121,7 @@ setInterval(function() {
         	}//react length check
         }
       });
-console.log('Done checking the task table');
+//console.log('Done checking the task table');
 }, the_interval);
 
 /******************************
@@ -264,7 +264,10 @@ function connectionCheck(groupId){ //actionId 2
                       }
                       Tclient.post('statuses/update', {status: 'Device '+row+' is unable to connect to the Network'}, function(error, tweet, response) {
                         if (!error) {
-                          console.log('Tweet posted');
+                          console.log('Connection breakage Tweet posted');
+                        }
+                        else{
+                          log.error('Tweet error: '+error);
                         }
                       });
                     }
@@ -278,6 +281,14 @@ function connectionCheck(groupId){ //actionId 2
                     else{
                       if(device.changedRows==1){//post only if row is changed,, 0 to 1
                         log.info('Device '+row+' is back in the Network');// 
+                        Tclient.post('statuses/update', {status: 'Device '+row+' is back in the Network'}, function(error, tweet, response) {
+                          if (!error) {
+                            console.log('Connection established Tweet posted');
+                          }
+                          else{
+                            log.error('Tweet error: '+error);
+                          }
+                        });
                       }
                     }
                   });
@@ -292,6 +303,14 @@ function connectionCheck(groupId){ //actionId 2
                   else{
                     if(device.changedRows==1){//post only if row is changed,, 0 to 1
                       log.info('Device '+row+' is back in the Network');// 
+                      Tclient.post('statuses/update', {status: 'Device '+row+' is back in the Network'}, function(error, tweet, response) {
+                        if (!error) {
+                          console.log('Connection established Tweet posted');
+                        }
+                        else{
+                          log.error('Tweet error: '+error);
+                        }
+                      });
                     }
                   }
                 });
@@ -410,7 +429,15 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                           log.error("Error in checking feeds entry in devices table"+err);
                          else{
                           if(rows.changedRows==1){//post only if row is changed,, 0 to 1
-                            log.info("Battery status updated for sensor in deviceNotif table, set to adverse ", rows.changedRows);// need to change the whole code
+                            log.info("Battery status updated for sensor "+deviceId+" in deviceNotif table, set to adverse ", rows.changedRows);// need to change the whole code
+                            Tclient.post('statuses/update', {status: 'Battery level for sensor '+deviceId+' is ADVERSE '}, function(error, tweet, response) {
+                              if (!error) {
+                                console.log('Adverse level Tweet posted');
+                              }
+                              else{
+                                log.error('Tweet error: '+error);
+                              }
+                            });
                           }
                          }
                       });
@@ -423,6 +450,14 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                         else{
                           if(rows.changedRows==1){//post only if row is changed,, 1 to 0
                             log.info("Battery status updated for sensor in deviceNotif table, set to healthy ", rows.changedRows);// need to change the whole code
+                            Tclient.post('statuses/update', {status: 'Battery level for sensor '+deviceId+' is healthy '}, function(error, tweet, response) {
+                              if (!error) {
+                                console.log('Healthy level Tweet posted');
+                              }
+                              else{
+                                log.error('Tweet error: '+error);
+                              }
+                            });
                           }
                         }
                       });
@@ -439,6 +474,14 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                          else{
                           if(rows.changedRows==1){//post only if row is changed,, 0 to 1
                             log.info("Battery status updated for sensor in deviceNotif table, set to adverse ", rows.changedRows);// need to change the whole code
+                            Tclient.post('statuses/update', {status: 'Battery level for ESP '+deviceId+' is ADVERSE '}, function(error, tweet, response) {
+                              if (!error) {
+                                console.log('Adverse level Tweet posted');
+                              }
+                              else{
+                                log.error('Tweet error: '+error);
+                              }
+                            });      
                           }
                          }
                       });
@@ -451,6 +494,14 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                         else{
                           if(rows.changedRows==1){//post only if row is changed,, 1 to 0
                             log.info("Battery status updated for sensor in deviceNotif table, set to healthy ", rows.changedRows);// need to change the whole code
+                            Tclient.post('statuses/update', {status: 'Battery level for ESP '+deviceId+' is healthy '}, function(error, tweet, response) {
+                              if (!error) {
+                                console.log('healthy level Tweet posted');
+                              }
+                              else{
+                                log.error('Tweet error: '+error);
+                              }
+                            });
                           }
                         }
                       });
@@ -468,6 +519,14 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                        else{
                         if(rows.changedRows==1){//post only if row is changed,, 0 to 1
                           log.info("Battery status updated for sensor in deviceNotif table, set to adverse ", rows.changedRows);// need to change the whole code
+                          Tclient.post('statuses/update', {status: 'Battery level for ESP '+deviceId+' is ADVERSE '}, function(error, tweet, response) {
+                            if (!error) {
+                              console.log(' ADverse level Tweet posted');
+                            }
+                            else{
+                              log.error('Tweet error: '+error);
+                            }
+                          });     
                         }
                        }
                     });
@@ -480,6 +539,14 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                       else{
                         if(rows.changedRows==1){//post only if row is changed,, 1 to 0
                           log.info("Battery status updated for sensor in deviceNotif table, set to healthy ", rows.changedRows);// need to change the whole code
+                          Tclient.post('statuses/update', {status: 'Battery level for ESP '+deviceId+' is healthy '}, function(error, tweet, response) {
+                            if (!error) {
+                              console.log('Healthy level Tweet posted');
+                            }
+                            else{
+                              log.error('Tweet error: '+error);
+                            }
+                          });
                         }
                       }
                     });
