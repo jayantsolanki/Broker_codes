@@ -650,6 +650,7 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
     ws = new WebSocket("ws://10.129.139.139:8180");
     ws.onopen = function() {
       log.info('connected to websocket server');
+      console.log('Iam outside', server);
       if(server==1){
         console.log('Iam inside');
         Tclient.post('statuses/update', {status: 'Mosca server back online'}, function(error, tweet, response) {
