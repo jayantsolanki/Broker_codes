@@ -451,7 +451,7 @@ function lowBattery(groupId, actionId, conditionValue){ //actionId 6
                       if (err) 
                         log.error("Error in checking feeds entry in devices table"+err);
                        else{
-                        log.info("Battery status updated for sensor in deviceNotif table, set to adverse ",rows.length);// need to change the whole code
+                        log.info("Battery status updated for sensor in deviceNotif table, set to adverse ",fields.length);// need to change the whole code
                        }
                     });
                   }
