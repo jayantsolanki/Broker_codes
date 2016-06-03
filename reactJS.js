@@ -651,7 +651,7 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
              "action":'Error',
              "data"  :"unable to send the sensor data, reconnecting to mosca-mysql-server"
         };
-        sendAll(jsonS);//sending button status to all device
+        //sendAll(jsonS);//sending button status to all device
       }
     };
 
