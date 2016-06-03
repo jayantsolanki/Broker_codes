@@ -71,20 +71,19 @@ var reactS="SELECT * FROM reactJS WHERE activated!=0";
 var the_interval = 5000;
 setInterval(function() {
   if(ws==null){
-    log.error("Mosca Server Outage", server);
     var time=new Date();
     if(server==0){//send message to Twitter
-      log.error("Mosca Server Outage inside", server);
+      log.error("Mosca Server Outage");
       Tclient.post('statuses/update', {status: "CRITICAL: Mosca server went Offline, please contact Admin, time "+time}, function(error, tweet, response) {
         if (!error) {
           console.log('Mosca Connection breakage Tweet posted');
-          
+          server=1;//prevent from reoccuring
         }
         else{
           log.error('Tweet error in Server Outage Posting: ',error);
         }
       });
-      server=1;//prevent from reoccuring
+
     }
     wsConnect();
   }
@@ -650,23 +649,20 @@ function checkSchedule(groupId, check){//actionId 4
 /**************************************Websocket con*********************************/
 function wsConnect() {//creating a websocket connection to the mosca-mysql-server.js for transfering the sensor value to the latter script
     ws = new WebSocket("ws://10.129.139.139:8180");
-    console.log('Iam inside and entering');
     ws.onopen = function() {
       log.info('connected to websocket server');
-      console.log('Iam outside', server);
       if(server==1){
-        console.log('Iam inside');
         var time2=new Date();
         Tclient.post('statuses/update', {status: 'Mosca server back online, time '+time2}, function(error, tweet, response) {
           if (!error) {
             console.log('Mosca Connection reestablished Tweet posted');
+            server=0;
           }
           else{
             log.error('Tweet error: '+error);
           }
         });
       }
-      server=0;
     };
    /* ws.onmessage = function(msg) {
       console.log(msg);
