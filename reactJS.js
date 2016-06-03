@@ -182,6 +182,7 @@ function setSchedule(groupId, threshold){ //actionId 1
           log.error("Error in checking device entry for moisture sensors in devices table"+err);
         else{
         	if(device.length>0){
+            console.log('Device found is '+device[0]['deviceId']);
         		//for(var i=0; i<device.length; i++){//hopefully one device only
         			var deviceId=device[0]['deviceId'];
         			var field1=device[0]['field1'];//for checking if it is bthm, bm, or something else
@@ -620,6 +621,7 @@ function highTemperature(groupId){ //actionId 7
 */
 function checkSchedule(groupId, check){//actionId 4
 	if(check==1){//setup a schedule
+    console.log('Group id is '+groupId);
 		var checkS='SELECT EXISTS(SELECT * FROM tasks WHERE type=2 and groupId='+groupId+' as find';//check if an automated schedule exists beforehand
       	connection.query(checkS, function(err, rows, fields) {      
 	        if (err) 
