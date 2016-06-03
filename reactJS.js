@@ -76,12 +76,13 @@ setInterval(function() {
       Tclient.post('statuses/update', {status: "CRITICAL: Mosca server went Offline, please contact Admin"}, function(error, tweet, response) {
         if (!error) {
           console.log(' Mosca Connection breakage Tweet posted');
-          server=1;//prevent from reoccuring
+          
         }
         else{
           log.error('Tweet error in Server Outage Posting: ',error);
         }
       });
+      server=1;//prevent from reoccuring
       wsConnect();
     }
   }
@@ -652,7 +653,7 @@ function wsConnect() {//creating a websocket connection to the mosca-mysql-serve
       if(server==1){
         Tclient.post('statuses/update', {status: 'Mosca server back online'}, function(error, tweet, response) {
           if (!error) {
-            console.log(' Mosca Connection reestablished Tweet posted');
+            console.log('Mosca Connection reestablished Tweet posted');
             server=1;//prevent from reoccuring
           }
           else{
