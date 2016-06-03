@@ -2,6 +2,15 @@
 var env = require('./settings');//importing settings file, environment variables
 ////initiating the bunyan log
 var Logger = require('bunyan');
+/********twitter api**********/
+var Twitter = require('twitter');
+var Tclient = new Twitter({
+  consumer_key: 'A9osl28dnL5Sf8fHjLNVcVKNU',
+  consumer_secret: 'bngJZxKfvis9olg1ykQm2AHMdSxtkK6ofzOjoK34dxpALRPthy',
+  access_token_key: '709042851791810560-F1xGVbRq1WYnb1Lpy9P27rm5SGQfwzJ',
+  access_token_secret: 'INMW42NC4W7iU59DpubZZ6VEWsrGGznRSF8vQONkwI8p7'
+});
+/****************************/
 /***************Adding websocket feature*******/
 //var uuid = require('node-uuid');
 //var WebSocketServer = require('ws').Server,
@@ -113,6 +122,11 @@ setInterval(function() {
         }
       });
 console.log('Done checking the task table');
+Tclient.post('statuses/update', {status: 'I am a tweet'}, function(error, tweet, response) {
+  if (!error) {
+    console.log(tweet);
+  }
+});
 }, the_interval);
 
 /******************************
