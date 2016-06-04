@@ -196,13 +196,21 @@ function setSchedule(groupId, threshold){ //actionId 1
 					        	var value=sensorMoistV[0]['value'];
 					        	if(value>=threshold){//if lower than threshold, more adc value less moisture
 					        		checkSchedule(groupId, 1);//check schedule, if necessary to setup
-                      var updateNotif='UPDATE deviceNotif SET field2=1 where deviceId =\''+deviceId+'\' ';//updating the deviceNotif table, low moisture
+                      var updateNotif='UPDATE deviceNotif SET field3=1 where deviceId =\''+deviceId+'\' ';//updating the deviceNotif table, low moisture
                       connection.query(updateNotif, function(err, row, fields) {
                         if (err) 
                           log.error("Error in updating the deviceNotif table"+err);
                         else{
                           if(row.changedRows==1){
                             log.info("Moisture status updated for sensor "+deviceId+" in deviceNotif table, set to low");
+                            Tclient.post('statuses/update', {status: "Moisture status updated for sensor "+deviceId+" in deviceNotif table, set to low"}, function(error, tweet, response) {
+                              if (!error) {
+                                console.log('Low Moisture level Tweet posted');
+                              }
+                              else{
+                                log.error('Tweet error: '+error);
+                              }
+                            });
                           }
                         }
                       });
@@ -379,13 +387,21 @@ function stopSchedule(groupId, threshold){//actionId 3
 					        	var value=sensorMoistV[0]['value'];
 					        	if(value<=threshold){//if greater than threshold, less adc value more moisture
 					        		checkSchedule(groupId, 0);//check schedule, if necessary to stop a schedule
-                      var updateNotif='UPDATE deviceNotif SET field2=0 where deviceId =\''+deviceId+'\' ';//updating the deviceNotif table
+                      var updateNotif='UPDATE deviceNotif SET field3=0 where deviceId =\''+deviceId+'\' ';//updating the deviceNotif table
                       connection.query(updateNotif, function(err, row, fields) {
                         if (err) 
                           log.error("Error in updating the deviceNotif table"+err);
                         else{
                           if(device.changedRows==1){
-                            log.info("Moisture status updated in deviceNotif table, set to normal");
+                            log.info("Moisture status updated for Sensor "+deviceId+" in deviceNotif table, set to normal");
+                            Tclient.post('statuses/update', {status: "Moisture status updated for Sensor "+deviceId+" in deviceNotif table, set to normal"}, function(error, tweet, response) {
+                              if (!error) {
+                                console.log('Normal Moisture level Tweet posted');
+                              }
+                              else{
+                                log.error('Tweet error: '+error);
+                              }
+                            });
                           }
                         }
                       });
@@ -643,6 +659,14 @@ function checkSchedule(groupId, check){//actionId 4
 	                    log.error("MYSQL ERROR in setting up the schedule"+err);
 	                  else{
 	                  	log.info("Low moisture, automated Schedule started for group id "+groupId);
+                      Tclient.post('statuses/update', {status: "Low moisture, Automated Schedule started for group id "+groupId}, function(error, tweet, response) {
+                        if (!error) {
+                          console.log('Automated Schedule started Tweet posted');
+                        }
+                        else{
+                          log.error('Tweet error: '+error);
+                        }
+                      });
 	                  }
 	                });
 	            }
@@ -657,12 +681,22 @@ function checkSchedule(groupId, check){//actionId 4
 	if(check==0){//request for stopping a schedule, just update the stop time, it will go off
 		var date=new Date;
 	    var stopTime=date.getHours()*100+date.getMinutes(); //HHmm format
-		var updateSchedule='UPDATE tasks SET stop=\''+stopTime+'\' WHERE type=2 and groupId='+groupId+' ';//update the stop time of the automated task for the group, if its exists
+		var updateSchedule='UPDATE tasks SET type=0, stop=\''+stopTime+'\' WHERE type=2 and groupId='+groupId+' ';//update the stop time of the automated task for the group, if its exists
       	connection.query(updateSchedule, function(err, rows, fields) {//actually here type may be changed to 0, to delete the task after it is stopped
       		if (err) 
             	log.error("MYSQL ERROR in updating the Schedule"+err);
           	else{
-          		log.info("Normal moisture, automated Schedule stopped for group id "+groupId);
+              if(rows.changedRows==1){
+          		  log.info("Normal moisture, automated Schedule stopped for group id "+groupId+" and will be deleted shortly");
+                Tclient.post('statuses/update', {status: "Normal moisture, automated Schedule stopped for group id "+groupId+" and will be deleted shortly"}, function(error, tweet, response) {
+                  if (!error) {
+                    console.log('Automated Schedule stoppage Tweet posted');
+                  }
+                  else{
+                    log.error('Tweet error: '+error);
+                  }
+                });
+              }
           	}
       	});
 
