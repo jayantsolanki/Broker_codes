@@ -392,7 +392,7 @@ function stopSchedule(groupId, threshold){//actionId 3
                         if (err) 
                           log.error("Error in updating the deviceNotif table"+err);
                         else{
-                          if(device.changedRows==1){
+                          if(row.changedRows==1){
                             log.info("Moisture status updated for Sensor "+deviceId+" in deviceNotif table, set to normal");
                             Tclient.post('statuses/update', {status: "Moisture status updated for Sensor "+deviceId+" in deviceNotif table, set to normal"}, function(error, tweet, response) {
                               if (!error) {
