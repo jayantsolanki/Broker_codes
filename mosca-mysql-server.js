@@ -52,7 +52,7 @@ var serialPort = new SerialPort(env.portNo, {
   baudrate: 9600
 })*/
 /////////////////
-var id, start,stop,action,currentime, item, macid, type, flag=1;
+var id, start,stop,action,currentime, item, macid, type; //flag=1;
 //mqtt config
 var mqtt    = require('mqtt');
 var mqttaddress=env.mqtt;
@@ -354,7 +354,7 @@ function setup() {
             var date=new Date();
             currenttime=date.getHours()*100+date.getMinutes();
             //console.log('current time is ',currenttime);
-            if(currenttime==0000)
+            /*if(currenttime==0000)
               flag=1; 
             if(currenttime==1200 || currenttime==1200)//check battery status at every 6:30pm
             {
@@ -369,7 +369,7 @@ function setup() {
                 sendAll(jsonS);//sending button status to all device
               }
               flag=0;
-            }
+            }*/
            //group=null;
             //if(macid==null)
             //console.log('global group  is '+group+ '----'+i);
@@ -601,9 +601,12 @@ function mqttpub(mqttclient,macid,switchId,action)//method for publishing the me
 }
 
 // battery status check
-function battstatus()
+function battstatus(groupId)
 {
-  var query='Select deviceId from devices where type=1 and switches=1';//only for one valve ESP
+  if(groupId==0)
+    var query='Select deviceId from devices where type=1 and switches=1';//only for one valve ESP
+  else
+    var query='Select deviceId from devices where type=1 and switches=1 and groupId='+groupId;//only for one valve ESP
   connection.query(query,function(err,rows,fields){
     if(err)
       log.error('Error in checking battery status, '+err);
@@ -621,7 +624,7 @@ function battstatus()
       }
       mqttclient.end();
     }
-});
+  });
 }
 /****************implementing websocket***********/
 wss.on('connection', function(ws) {
@@ -635,10 +638,24 @@ wss.on('connection', function(ws) {
     if(response.event=='battery')//for battery check event
     {
       //if(response.device==0)
-      battstatus();
+      battstatus(0);//all valve devices
       log.info('Client requested battery status from ESP devices');
       var jsonS={
            "action":'battery check',
+           "data"  :"Client requested for battery status"
+      };
+      sendAll(jsonS);//sending button status to all device
+
+      //console.log('message received ', response.data.check, 'action ', response.data.payload, 'deviceId ', response.data.device);
+
+    }
+    if(response.check=='battery')//for battery check event from reactJS
+    {
+      //if(response.device==0)
+      battstatus(response.groupId);
+      log.info('ReactJS requested battery status from ESP groupId '+response.groupId);
+      var jsonS={
+           "action":'battery check from reactJS for groupId'+response.groupId,
            "data"  :"Client requested for battery status"
       };
       sendAll(jsonS);//sending button status to all device
