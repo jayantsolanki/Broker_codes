@@ -18,7 +18,7 @@ var Tclient = new Twitter({
 var WebSocket = require('ws');
 var ws=null;
 wsConnect();
-var log = new Logger({name:'ESP-Valve', 
+var log = new Logger({name:'ReactJS', 
          streams: [
     {
       level: 'info',
