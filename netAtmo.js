@@ -67,7 +67,7 @@ var getDevicelist = function(err, devices, modules) {
         log.info('Thingspeak feed update successfully for NetAtmo ERTS-IN');
     }
   });
-  client.updateChannel(65, { "field1":devices[1].dashboard_data.Temperature,"field2":devices[1].dashboard_data.CO2,"field3":devices[1].dashboard_data.Humidity,"field4":devices[1].dashboard_data.Noise,"field5":devices[1].dashboard_data.pressure, "field6":devices[1].wifi_status}, function(err, resp) {
+  client.updateChannel(65, { "field1":devices[1].dashboard_data.Temperature,"field2":devices[1].dashboard_data.CO2,"field3":devices[1].dashboard_data.Humidity,"field4":devices[1].dashboard_data.Noise,"field5":devices[1].dashboard_data.Pressure, "field6":devices[1].wifi_status}, function(err, resp) {
     if (!err && resp > 0) {
         log.info('Thingspeak feed update successfully for NetAtmo ERTS-Lab');
     }
