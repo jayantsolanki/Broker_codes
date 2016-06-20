@@ -7,6 +7,7 @@ var client = new ThingSpeakClient({
   server:'http://10.129.139.139:3000',
   updateTimeout:20000
 });
+var loggedTim=0;
 var log = new Logger({name:'NetAtmo-Sensor', 
          streams: [
     {
@@ -50,28 +51,31 @@ client.attachChannel(65, { writeKey:'5SV73IZO1KJ9UGIB'});
 console.log('Channel 65 attached');
 var api = new netatmo(auth);
  
-var getUser = function(err, user) {
+/*var getUser = function(err, user) {
   console.log(user);
-};
+};*/
  
 var getDevicelist = function(err, devices, modules) {
-  console.log(devices[1].dashboard_data.Temperature);
+  console.log(devices[1].dashboard_data.time_utc);
   //console.log(modules[2]);
-  client.updateChannel(63, { "field1":modules[1].dashboard_data.Temperature,"field2":modules[1].dashboard_data.Humidity,"field3":modules[1].battery_vp}, function(err, resp) {
-    if (!err && resp > 0) {
-        log.info('Thingspeak feed update successfully for NetAtmo ERTS-OUT');
-    }
-  });
-  client.updateChannel(64, { "field1":modules[2].dashboard_data.Temperature,"field2":modules[2].dashboard_data.CO2,"field3":modules[2].dashboard_data.Humidity,"field4":modules[2].battery_vp}, function(err, resp) {
-    if (!err && resp > 0) {
-        log.info('Thingspeak feed update successfully for NetAtmo ERTS-IN');
-    }
-  });
-  client.updateChannel(65, { "field1":devices[1].dashboard_data.Temperature,"field2":devices[1].dashboard_data.CO2,"field3":devices[1].dashboard_data.Humidity,"field4":devices[1].dashboard_data.Noise,"field5":devices[1].dashboard_data.Pressure, "field6":devices[1].wifi_status}, function(err, resp) {
-    if (!err && resp > 0) {
-        log.info('Thingspeak feed update successfully for NetAtmo ERTS-Lab');
-    }
-  });
+  if(loggedTime!=devices[1].dashboard_data.time_utc){
+    client.updateChannel(63, { "field1":modules[1].dashboard_data.Temperature,"field2":modules[1].dashboard_data.Humidity,"field3":modules[1].battery_vp}, function(err, resp) {
+      if (!err && resp > 0) {
+          log.info('Thingspeak feed update successfully for NetAtmo ERTS-OUT');
+      }
+    });
+    client.updateChannel(64, { "field1":modules[2].dashboard_data.Temperature,"field2":modules[2].dashboard_data.CO2,"field3":modules[2].dashboard_data.Humidity,"field4":modules[2].battery_vp}, function(err, resp) {
+      if (!err && resp > 0) {
+          log.info('Thingspeak feed update successfully for NetAtmo ERTS-IN');
+      }
+    });
+    client.updateChannel(65, { "field1":devices[1].dashboard_data.Temperature,"field2":devices[1].dashboard_data.CO2,"field3":devices[1].dashboard_data.Humidity,"field4":devices[1].dashboard_data.Noise,"field5":devices[1].dashboard_data.Pressure, "field6":devices[1].wifi_status}, function(err, resp) {
+      if (!err && resp > 0) {
+          log.info('Thingspeak feed update successfully for NetAtmo ERTS-Lab');
+      }
+    });
+  }
+loggedTime=devices[1].dashboard_data.time_utc;
 };
  
 var getMeasure = function(err, measure) {
@@ -100,4 +104,4 @@ var setThermpoint = function(err, status) {
 api.on('get-devicelist', getDevicelist);
 setInterval(function() {
   api.getDevicelist();
-},300000);
+},5000);
