@@ -104,4 +104,4 @@ var setThermpoint = function(err, status) {
 api.on('get-devicelist', getDevicelist);
 setInterval(function() {
   api.getDevicelist();
-},5000);
+},300000);
