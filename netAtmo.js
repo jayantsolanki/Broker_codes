@@ -7,7 +7,7 @@ var client = new ThingSpeakClient({
   server:'http://10.129.139.139:3000',
   updateTimeout:20000
 });
-var loggedTim=0;
+var loggedTime=0;
 var log = new Logger({name:'NetAtmo-Sensor', 
          streams: [
     {
