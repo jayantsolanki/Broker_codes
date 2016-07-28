@@ -28,7 +28,7 @@ It basically
 - Checking the connectivity status of all the devices
 - etc
 
-###Setup
+###Setup (For Raspberry Pi)
 - Creating a bash script for running the serial-sensor code on the Raspberry Pi
 ```
 #!/bin/bash
