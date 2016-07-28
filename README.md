@@ -27,3 +27,26 @@ It basically
 - Automating the irrigation schedule
 - Checking the connectivity status of all the devices
 - etc
+
+###Setup
+- Creating a bash script for running the serial-sensor code on the Raspberry Pi
+```
+#!/bin/bash
+screen -dmS "Serial-Sensor"
+screen -S "Serial-Sensor" -p 0 -X stuff "node /home/pi/brokercodes/serial-sensor.js |bunyan -L \\r"
+```
+- chmod -x serial-sensor.sh
+
+#### configuring daemon
+- sudo apt-get install supervisor
+    - goto /etc/supervisor/conf.d/
+    - create serial-sensor.conf and enter below code
+```
+[program:serial-sensor]
+command=/home/pi/brokercodes/serial-sensor.sh
+autostart=true
+autorestart=true
+stderr_logfile=/home/pi/brokercodes/log/serial-sensor.error
+stdout_logfile=/home/pi/brokercodes/log/serial-sensor.out
+```
+
