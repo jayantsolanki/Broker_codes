@@ -29,24 +29,50 @@ It basically
 - etc
 
 ###Setup (For Raspberry Pi)
-- Creating a bash script for running the serial-sensor code on the Raspberry Pi
+<!--- Creating a bash script for running the serial-sensor code on the Raspberry Pi
 ```
 #!/bin/bash
 screen -dmS "Serial-Sensor"
 screen -S "Serial-Sensor" -p 0 -X stuff "node /home/pi/brokercodes/serial-sensor.js |bunyan -L \\r"
 ```
 - chmod -x serial-sensor.sh
-
-#### configuring daemon
+-->
+#### configuring Supervisor for serial-sensor script
 - sudo apt-get install supervisor
     - goto /etc/supervisor/conf.d/
     - create serial-sensor.conf and enter below code
 ```
 [program:serial-sensor]
-command=/home/pi/brokercodes/serial-sensor.sh
+command=/usr/bin/node /home/pi/brokercodes/serial-sensor.js |bunyan -L
 autostart=true
 autorestart=true
 stderr_logfile=/home/pi/brokercodes/log/serial-sensor.error
 stdout_logfile=/home/pi/brokercodes/log/serial-sensor.out
+user=pi
+directory=/home/pi/brokercodes
+
 ```
+    - create parrot-sensor.conf and enter below code
+```
+[program:flower-power]
+command=/usr/bin/node /home/pi/node_modules/flower-powerparrotsense.js
+autostart=true
+autorestart=true
+stderr_logfile=/home/pi/brokercodes/log/parrot-sensor.error
+stdout_logfile=/home/pi/brokercodes/log/parrot-sensor.out
+user=pi
+directory=/home/pi/node_modules/flower-power
+
+```
+- Updating supervisor with above configs
+    - type sudo supervisorctl
+    - type reread
+    - type update
+- To monitor the process
+    - type sudo supervisorctl
+    - type status
+- To start a process
+    - Type start process conf name, for example start serial-sensor
+- To stop a process
+    - Type stop process conf name
 
