@@ -52,7 +52,7 @@ user=pi
 directory=/home/pi/brokercodes
 
 ```
-    - create parrot-sensor.conf and enter below code
+- create parrot-sensor.conf and enter below code
 ```
 [program:flower-power]
 command=/usr/bin/node /home/pi/node_modules/flower-powerparrotsense.js
@@ -75,4 +75,7 @@ directory=/home/pi/node_modules/flower-power
     - Type start process conf name, for example start serial-sensor
 - To stop a process
     - Type stop process conf name
-
+- To monitor the logs
+    - sudo supervisorctl tail -f serial-sensor |bunyan -L
+    - sudo supervisorctl tail -f parrot-sensor |bunyan -L
+---------------------------------------------------------------------------
