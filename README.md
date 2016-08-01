@@ -119,7 +119,7 @@ directory=/home/jayant/brokercodes
 ```
 - create thingspeak.conf and enter below code
 ```
-[program:netAtmo]
+[program:thingspeak]
 command=/usr/local/bin/rails server
 autostart=true
 autorestart=true
