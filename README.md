@@ -78,4 +78,69 @@ directory=/home/pi/node_modules/flower-power
 - To monitor the logs
     - sudo supervisorctl tail -f serial-sensor |bunyan -L
     - sudo supervisorctl tail -f parrot-sensor |bunyan -L
----------------------------------------------------------------------------
+
+###Setup (For Basement Server)
+#### configuring Supervisor for serial-sensor script
+- sudo apt-get install supervisor
+    - goto /etc/supervisor/conf.d/
+        - create mosca-mysql-server.conf and enter below code
+```
+[program:mosca-mysql-server]
+command=/usr/local/bin/node /home/jayant/brokercodes/mosca-mysql-server.js
+autostart=true
+autorestart=true
+stderr_logfile=/home/jayant/brokercodes/log/mosca-mysql-server.error
+stdout_logfile=/home/jayant/brokercodes/log/mosca-mysql-server.out
+user=jayant
+directory=/home/jayant/brokercodes
+```
+- create netAtmo.conf and enter below code
+```
+[program:netAtmo]
+command=/usr/local/bin/node /home/jayant/brokercodes/netAtmo.js
+autostart=true
+autorestart=true
+stderr_logfile=/home/jayant/brokercodes/log/netAtmo.error
+stdout_logfile=/home/jayant/brokercodes/log/netAtmo.out
+user=jayant
+directory=/home/jayant/brokercodes
+
+```
+- create reactJS.conf and enter below code
+```
+[program:reactJS]
+command=/usr/local/bin/node /home/jayant/brokercodes/reactJS.js
+autostart=true
+autorestart=true
+stderr_logfile=/home/jayant/brokercodes/log/reactJS.error
+stdout_logfile=/home/jayant/brokercodes/log/reactJS.out
+user=jayant
+directory=/home/jayant/brokercodes
+```
+- create thingspeak.conf and enter below code
+```
+[program:netAtmo]
+command=/usr/local/bin/rails server
+autostart=true
+autorestart=true
+stderr_logfile=/home/jayant/brokercodes/log/thingspeak.error
+stdout_logfile=/home/jayant/brokercodes/log/thingspeak.out
+user=jayant
+directory=/var/www/thingspeak  
+```
+- Updating supervisor with above configs
+    - type sudo supervisorctl
+    - type reread
+    - type update
+- To monitor the process
+    - type sudo supervisorctl
+    - type status
+- To start a process
+    - Type start process conf name, for example start serial-sensor
+- To stop a process
+    - Type stop process conf name
+- To monitor the logs
+    - sudo supervisorctl tail -f mosca-mysql-server |bunyan -L
+    - sudo supervisorctl tail -f parrot-sensor |bunyan -L
+    - or
+    - tail -f /home/jayant/brokercodes/log/mosca-mysql-server.out |bunyan -L
