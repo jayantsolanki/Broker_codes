@@ -52,10 +52,10 @@ user=pi
 directory=/home/pi/brokercodes
 
 ```
-- create parrot-sensor.conf and enter below code
+- create flower-sensor.conf and enter below code
 ```
 [program:flower-power]
-command=/usr/bin/node /home/pi/node_modules/flower-powerparrotsense.js
+command=/usr/bin/node /home/pi/node_modules/flower-power/parrotsense.js
 autostart=true
 autorestart=true
 stderr_logfile=/home/pi/brokercodes/log/parrot-sensor.error
