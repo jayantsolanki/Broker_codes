@@ -27,3 +27,120 @@ It basically
 - Automating the irrigation schedule
 - Checking the connectivity status of all the devices
 - etc
+
+###Setup (For Raspberry Pi)
+<!--- Creating a bash script for running the serial-sensor code on the Raspberry Pi
+```
+#!/bin/bash
+screen -dmS "Serial-Sensor"
+screen -S "Serial-Sensor" -p 0 -X stuff "node /home/pi/brokercodes/serial-sensor.js |bunyan -L \\r"
+```
+- chmod -x serial-sensor.sh
+-->
+#### configuring Supervisor for serial-sensor script
+- sudo apt-get install supervisor
+    - goto /etc/supervisor/conf.d/
+    - create serial-sensor.conf and enter below code
+```
+[program:serial-sensor]
+command=/usr/bin/node /home/pi/brokercodes/serial-sensor.js |bunyan -L
+autostart=true
+autorestart=true
+stderr_logfile=/home/pi/brokercodes/log/serial-sensor.error
+stdout_logfile=/home/pi/brokercodes/log/serial-sensor.out
+user=pi
+directory=/home/pi/brokercodes
+
+```
+- create flower-power.conf and enter below code
+```
+[program:flower-power]
+command=/usr/bin/node /home/pi/node_modules/flower-power/parrotsense.js
+autostart=true
+autorestart=true
+stderr_logfile=/home/pi/brokercodes/log/parrot-sensor.error
+stdout_logfile=/home/pi/brokercodes/log/parrot-sensor.out
+user=pi
+directory=/home/pi/node_modules/flower-power
+
+```
+- Updating supervisor with above configs
+    - type sudo supervisorctl
+    - type reread
+    - type update
+- To monitor the process
+    - type sudo supervisorctl
+    - type status
+- To start a process
+    - Type start process conf name, for example start serial-sensor
+- To stop a process
+    - Type stop process conf name
+- To monitor the logs
+    - sudo supervisorctl tail -f serial-sensor |bunyan -L
+    - sudo supervisorctl tail -f parrot-sensor |bunyan -L
+
+###Setup (For Basement Server)
+#### configuring Supervisor for serial-sensor script
+- sudo apt-get install supervisor
+    - goto /etc/supervisor/conf.d/
+        - create mosca-mysql-server.conf and enter below code
+```
+[program:mosca-mysql-server]
+command=/usr/local/bin/node /home/jayant/brokercodes/mosca-mysql-server.js
+autostart=true
+autorestart=true
+stderr_logfile=/home/jayant/brokercodes/log/mosca-mysql-server.error
+stdout_logfile=/home/jayant/brokercodes/log/mosca-mysql-server.out
+user=jayant
+directory=/home/jayant/brokercodes
+```
+- create netAtmo.conf and enter below code
+```
+[program:netAtmo]
+command=/usr/local/bin/node /home/jayant/brokercodes/netAtmo.js
+autostart=true
+autorestart=true
+stderr_logfile=/home/jayant/brokercodes/log/netAtmo.error
+stdout_logfile=/home/jayant/brokercodes/log/netAtmo.out
+user=jayant
+directory=/home/jayant/brokercodes
+
+```
+- create reactJS.conf and enter below code
+```
+[program:reactJS]
+command=/usr/local/bin/node /home/jayant/brokercodes/reactJS.js
+autostart=true
+autorestart=true
+stderr_logfile=/home/jayant/brokercodes/log/reactJS.error
+stdout_logfile=/home/jayant/brokercodes/log/reactJS.out
+user=jayant
+directory=/home/jayant/brokercodes
+```
+- create thingspeak.conf and enter below code
+```
+[program:thingspeak]
+command=/usr/local/bin/rails server
+autostart=true
+autorestart=true
+stderr_logfile=/home/jayant/brokercodes/log/thingspeak.error
+stdout_logfile=/home/jayant/brokercodes/log/thingspeak.out
+user=jayant
+directory=/var/www/thingspeak  
+```
+- Updating supervisor with above configs
+    - type sudo supervisorctl
+    - type reread
+    - type update
+- To monitor the process
+    - type sudo supervisorctl
+    - type status
+- To start a process
+    - Type start process conf name, for example start serial-sensor
+- To stop a process
+    - Type stop process conf name
+- To monitor the logs
+    - sudo supervisorctl tail -f mosca-mysql-server |bunyan -L
+    - sudo supervisorctl tail -f parrot-sensor |bunyan -L
+    - or
+    - tail -f /home/jayant/brokercodes/log/mosca-mysql-server.out |bunyan -L
