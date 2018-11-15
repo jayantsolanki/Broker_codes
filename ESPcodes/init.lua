@@ -1,7 +1,7 @@
 --tmr.delay(500000)  --remove this later
 
 wifi.setmode(wifi.STATION)
-wifi.sta.config('ERTS LAB 204','balstre402')
+wifi.sta.config('heath 50','jabberwocky')
 
 
 

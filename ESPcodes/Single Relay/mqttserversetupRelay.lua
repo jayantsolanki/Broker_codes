@@ -15,20 +15,12 @@ m:on('message', function(conn, topic, data)
   
   if data == "1" then 
     startSwitch1()
-  elseif data == "3" then 
-    startSwitch2()
-  elseif data == "5" then 
-    startSwitch3()
-  elseif data == "7" then 
-    startSwitch4()
   elseif data == "0" then 
     stopSwitch1()
+  elseif data == "3" then 
+    startSwitch2()
   elseif data == "4" then 
     stopSwitch2()
-  elseif data == "6" then 
-    stopSwitch3()
-  elseif data == "8" then 
-    stopSwitch4()
 --to give the user the battery status 
   elseif data == "2" then   
     -- paylaod format identifier,bat3,bat6
@@ -45,35 +37,19 @@ end)
 
 function startSwitch1()
     -- gpio.write(pin12,gpio.HIGH)
-    gpio.write(pin14,gpio.LOW)
+    gpio.write(pin4,gpio.LOW)
     -- doValve()
 end
 function startSwitch2()
     -- gpio.write(pin12,gpio.HIGH)
-    gpio.write(pin12,gpio.LOW)
-    -- doValve()
-end
-function startSwitch3()
-    -- gpio.write(pin12,gpio.HIGH)
-    gpio.write(pin13,gpio.LOW)
-    -- doValve()
-end
-function startSwitch4()
-    -- gpio.write(pin12,gpio.HIGH)
-    gpio.write(pin4,gpio.LOW)
+    gpio.write(pin2,gpio.LOW)
     -- doValve()
 end
 function stopSwitch1()
-    gpio.write(pin14,gpio.HIGH)
+    gpio.write(pin4,gpio.HIGH)
 end
 function stopSwitch2()
-    gpio.write(pin12,gpio.HIGH)
-end
-function stopSwitch3()
-    gpio.write(pin13,gpio.HIGH)
-end
-function stopSwitch4()
-    gpio.write(pin4,gpio.HIGH)
+    gpio.write(pin2,gpio.HIGH)
 end
 -- function doValve()
 --   gpio.write(pin13,gpio.HIGH) 

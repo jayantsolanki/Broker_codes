@@ -17,7 +17,7 @@ tmr.alarm(1, 1000, 1, function()
                         tries = tries + 1                      -- incrementing the number of tries 
                         dofile('mqttsetup_valve.lua')                      --calling mqtt script 
 
-                        m:connect('192.237.176.49',1883, 0,function(conn) 
+                        m:connect('192.168.1.73',1883, 0,function(conn) 
                                 tmr.stop(1)
                                 c = true    
                                 --print('mqtt connected')
