@@ -121,82 +121,89 @@ var authorizeSubscribe = function(client, topic, callback) {
 }
 ////////////// 
 var server = new mosca.Server(settings);
+// first event detection in MOSCA
 //device discovery
 server.on('clientConnected', function(client) {
     var val=client.id;
-	
-    //var date = new Date();
-   // if(val!='M-O-S-C-A'){ //do not enter client id of server
+    var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
+    if(regex.test(val))//check if the client id is the macid
+    {
+      //{ //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
       var post  = {macid: val};
-      var check='SELECT EXISTS(SELECT * FROM devices WHERE deviceId=\''+val+'\') as find';
+      var check='SELECT EXISTS(SELECT * FROM devices WHERE deviceId=\''+val+'\') as find';// query for checking if the connected devices has been registered before or not
       connection.query(check, function(err, rows, fields) {
-      //console.log('Inside client connected '+val);
-      
-        if (err) 
+      if (err) 
         log.error("MYSQL ERROR "+err);
-        else{
-            var find=rows[0]['find'];
-           // console.log('Inside client connected '+find);
-            var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
-            //console.log('Mac id is valid? '+regex.test(post.macid));
-            if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
-              if(regex.test(post.macid))//check if the client id is the macid
-              { //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
-                var devdis='INSERT INTO devices (deviceId, type) VALUES (\''+post.macid+'\',1)'
-                connection.query(devdis, function(err, rows, fields) { //insert into the table 
-                  if (err) 
-                    log.error("MYSQL ERROR "+err);
-                  else{
-                    log.info('New Device found, adding '+post.macid+' into device table');
-                    log.info('Requesting for more data from device '+post.macid);
-                    var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-                    mqttpub(mqttclient,post.macid,0,'R');//calling mqttpub for publishing value R to concerned Macid
-                    mqttclient.end();
-                    var jsonS={
-                         "deviceId":post.macid,
-                         "action":'info',
-                         "data"  :"new Device Found"
-                    };
-                    sendAll(jsonS);//sending button status to all device
-                    /*TSclient.createChannel(1, { 'api_key':env.apiKey,'name':post.macid, 'field1':'PbatValue', 'field2':'SbatValue','field3':'packetID'}, function(err) {
-                      if (!err) {//channel creation done
-                          log.info('New channel created for new Valve: '+post.macid);
-                          attachChannel(post.macid);//attaching the channel;
-                      }
-                      else
-                      {
-                        console.log(err)
-                      }
-                    });*/
-                  }
-                });
-              }
-            }
-          
-            else{
-              log.info('Device '+post.macid+' reconnected ');
-              //var devdis='UPDATE devices SET status=1, seen= now() where status!=2 and macid=\''+post.macid+'\'';
-              var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+post.macid+'\',1, DEFAULT)';
-              connection.query(devdis, function(err, rows, fields) { //updating device status as online if it reconnects
-                if (err)
-                  log.error("MYSQL ERROR "+err);
-                //else
-                 // console.log('Device '+post.macid+' marked online '+date);
+      else
+      {
+          var find=rows[0]['find'];
+          if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
             
+              var devdis='INSERT INTO devices (deviceId, type) VALUES (\''+post.macid+'\',1)'
+              connection.query(devdis, function(err, rows, fields) { //insert into the table 
+                if (err) 
+                  log.error("MYSQL ERROR "+err);
+                else{
+                  log.info('New Device found, adding '+post.macid+' into device table');
+                  log.info('Requesting for more data from device '+post.macid);
+                  var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                  mqttpub(mqttclient,post.macid,0,'R');//calling mqttpub for publishing value R to concerned Macid
+                  mqttclient.end();
+                  var jsonS={
+                       "deviceId":post.macid,
+                       "action":'info',
+                       "data"  :"new Device Found"
+                  };
+                  sendAll(jsonS);//sending button status to all Website users via websocket
+                }
               });
-              var jsonS={
-                     "deviceId":val,
-                     "status":1
-               };
-               sendAll(jsonS);//sending  online status to website
-            }
           }
+        
+          else{// if not the new device
+            log.info('Device '+post.macid+' reconnected ');
+            var devdis='INSERT INTO deviceStatus VALUES (DEFAULT,\''+post.macid+'\',1, DEFAULT)';
+            connection.query(devdis, function(err, rows, fields) { //updating device status as online 
+              if (err)
+                log.error("MYSQL ERROR "+err);
+              //else
+               // console.log('Device '+post.macid+' marked online '+date);
+          
+            });
+            var jsonS={
+                   "deviceId":val,
+                   "status":1
+             };
+             sendAll(jsonS);//sending  online status to website
+          }
+      }
       });
-   // }
-    //console.log('client connected', client.id);
+    }
+    else{
+      log.info("Unknown Device with non conforming ID connected ",val)
+    }
 });
 
-server.on('unsubscribed', function(topic, client) { //checking if the device goes offline
+// fired when a client or device disconnects
+server.on('clientDisconnected', function(client) {
+  var val=client.id;
+  log.info('Device Disconnected', client.id);
+  var offlineq='INSERT INTO deviceStatus VALUES (DEFAULT,\''+client.id.toString()+'\',0, DEFAULT)';
+  connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
+    if (err) 
+      log.error("MYSQL ERROR "+err);
+    //else
+      //console.log('Device '+client.id.toString()+' marked offline '+date);
+
+  });
+  var jsonS={
+       "deviceId":val,
+       "status":0
+  };
+  sendAll(jsonS);//sending  offline status to website users
+});
+
+// fired when a client unsubscribes
+/*server.on('unsubscribed', function(topic, client) { //checking if the device goes offline
     var val=client.id;
     //var date = new Date();
     log.info('client unsubscribed', client.id);
@@ -215,7 +222,7 @@ server.on('unsubscribed', function(topic, client) { //checking if the device goe
    };
    sendAll(jsonS);//sending  offline status to website
 
-});
+});*/
 // fired when a message is received 
 server.on('published', function(packet) {
   //var date = new Date();
@@ -244,7 +251,6 @@ server.on('published', function(packet) {
   {
     if(topic=='register')
     {
-      log.info("Hell Yeah, Device up for registration");
       var msg=packet.payload;
       var dataout=String(msg);
       var msgarray=dataout.split(",");//getting strings
@@ -252,7 +258,7 @@ server.on('published', function(packet) {
       var type=msgarray[1];//type of esp i.e., relay,, single valve, multiple valve, no of switches
       var batP=msgarray[2];//primary battery
       var batS=msgarray[3];//secondary battery
-      log.info('Device type is of ',type);//new switches insert goes here
+      log.info('New device, device type is of ',type);//new switches insert goes here
       newSwitches(devMacid,type, batP, batS);//goes to the function and do the necessary entries of switches into the table
     }  
   }
