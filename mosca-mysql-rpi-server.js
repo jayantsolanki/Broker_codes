@@ -226,7 +226,7 @@ server.on('published', function(packet) {
     topic=topic.toString();
     var jsonS={
          "action":'mqtt payload',
-         "data"  String(packet.payload)
+         "data":  String(packet.payload)
     };
     sendAll(jsonS);//sending button status to all device
     if(regex1.test(packet) || packet.cmd=='publish'){// useless block
@@ -846,81 +846,42 @@ function deviceStatus(row, callback){
 *
 */
 function newSwitches(macId,type){
-  var check='SELECT EXISTS(SELECT * FROM switches WHERE deviceId=\''+macId+'\') as find';
-      connection.query(check, function(err, rows, fields) {      
-        if (err) 
-        log.error("MYSQL ERROR during checking of device entry under newswitches method: "+err);
-        else{
-            var find=rows[0]['find'];
-            var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
-            if(find==0)
-            { //check device is the new one, find=0 means new device found, no previous entry in the table
-              if(regex.test(macId))//check if the client id is the macid
-              { //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
-                if(type==1)// if the device has only one switch, assume it will be powered by batteries, primary and secondary
-                  var devdis='UPDATE devices SET switches='+type+', field1=\'packetId\', field2=\'Pbattery\', field3=\'SBattery\' where deviceId=\''+macId+'\'';
-                else if(type>1)
-                  var devdis='UPDATE devices SET switches='+type+' where deviceId=\''+macId+'\'';//No battery needed for relay or switches>1
-                connection.query(devdis, function(err, rows, fields) { //insert into the table 
-                  if (err) 
-                    log.error("MYSQL ERROR during updating of device information in devices table: "+err);
-                  else{
-                    log.info('Device type updated for '+macId+' into device table, type '+type);
-                      var jsonS={
-                           "action":'device',
-                           "data"  :"Device type updated for "+macId+" into device table, type "+type
-                      };
-                      sendAll(jsonS);//sending button status to all device
-                    // if(type==1){//for thingspeak feed
-                    //   var thingspeakchannelrow={
-                    //     'api_key' : env.apiKey,
-                    //     'name'    : macId,
-                    //     'field1'  :'PbatValue',
-                    //     'field2'  :'SbatValue',
-                    //     'field3'  :'packetID'
-                    //   }
-                      /*TSclient.createChannel(1, thingspeakchannelrow, function(err) {
-                        if (!err) {//channel creation done
-                            log.info('New channel created for new Valve: '+macId);
-                            var jsonS={
-                                 "action":'device',
-                                 "data"  :'New channel created for new Valve: '+macId
-                            };
-                            sendAll(jsonS);//sending button status to all device
-                            attachChannel(macId);//attaching the channel;
-                        }
-                        else
-                        {
-                          console.log(err)
-                        }
-                      });*/
-                     /* var devdis='INSERT INTO deviceNotif(deviceId, field1, field2) VALUES (\''+macId+'\',0,0)'//insert into deviceNotif table, 0 and 0 coz it doesn't need battery
-                      connection.query(devdis, function(err, rows, fields) { //insert into the table 
-                        if (err) 
-                          log.error("MYSQL ERROR Entry in deviceNotif "+err);
-                        else{
-                          log.info("Device Entry in deviceNotif table");
-                          var jsonS={
-                               "action":'device',
-                               "data"  :'Device Entry in deviceNotif table'
-                          };
-                          sendAll(jsonS);//sending button status to all device
-                        }
-                      });*/
-                    }
-                    
-                  }
-                });
-                // for creating new switches
-                for(var j=1;j<=type;j++){// this can be improved, instead of repeatedly calling, create multi sql query and fire in a single query
-                  insertSwitch(macId,j);
+  var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
+  if(regex.test(macId))//check if the client id is the macid
+  { //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
+    var check='SELECT EXISTS(SELECT * FROM switches WHERE deviceId=\''+macId+'\') as find';
+    connection.query(check, function(err, rows, fields) {      
+      if (err) 
+      log.error("MYSQL ERROR during checking of device entry under newswitches method: "+err);
+      else{
+          var find=rows[0]['find'];
+          if(find==0)
+          { //check device is the new one, find=0 means new device found, no previous entry in the table
+            if(type==1)// if the device has only one switch, assume it will be powered by batteries, primary and secondary
+              var devdis='UPDATE devices SET switches='+type+', field1=\'packetId\', field2=\'Pbattery\', field3=\'SBattery\' where deviceId=\''+macId+'\'';
+            else if(type>1)
+              var devdis='UPDATE devices SET switches='+type+' where deviceId=\''+macId+'\'';//No battery needed for relay or switches>1
+            connection.query(devdis, function(err, rows, fields) { //insert into the table 
+              if (err) 
+                log.error("MYSQL ERROR during updating of device information in devices table: "+err);
+              else{
+                log.info('Device type updated for '+macId+' into device table, type '+type);
+                  var jsonS={
+                       "action":'device',
+                       "data"  :"Device type updated for "+macId+" into device table, type "+type
+                  };
+                  sendAll(jsonS);//sending button status to all device
                 }
-              }//closing macid check if clause
+            });
+            // for creating new switches
+            for(var j=1;j<=type;j++){// this can be improved, instead of repeatedly calling, create multi sql query and fire in a single query
+              insertSwitch(macId,j);
             }
           }
-      });
+        }
+    });
+  }
 }
-
 /******************************
 *function: insertSwitch(macId, switchId)
 *input: takes device_id and switchId
