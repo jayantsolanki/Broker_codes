@@ -221,116 +221,45 @@ server.on('published', function(packet) {
   //var date = new Date();
   var topic=packet.topic; //get value of payload
   var regex1 = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
-  topic=topic.toString();
-  var jsonS={
-       "action":'mqtt payload',
-       "data"  :packet
-  };
-  sendAll(jsonS);//sending button status to all device
-  if(regex1.test(packet) || packet.cmd=='publish'){
-    log.info('Client id is ',packet.cmd);
-    log.info('Published topic '+packet.topic);
-    log.info('Published payload '+packet.payload);
-  }
-
-
-  if(topic=='register')
+  try
   {
-    log.info("Hell Yeah, Device up for registration");
-    var msg=packet.payload;
-    var dataout=String(msg);
-    var msgarray=dataout.split(",");//getting strings
-    var devMacid = msgarray[0];
-    var type=msgarray[1];//type of esp i.e., relay,, single valve, multiple valve, no of switches
-    var batP=msgarray[2];//primary battery
-    var batS=msgarray[3];//secondary battery
-    log.info('Device type is of ',type);//new switches insert goes here
-    // newSwitches(batmacid,type, batP, batS);//goes to the function and do the necessary
-    log.info("Device mac id is ",packet)
-    log.info("Device is ", devMacid);
+    topic=topic.toString();
+    var jsonS={
+         "action":'mqtt payload',
+         "data"  String(packet.payload)
+    };
+    sendAll(jsonS);//sending button status to all device
+    if(regex1.test(packet) || packet.cmd=='publish'){// useless block
+      log.info('Client id is ',packet.cmd);
+      log.info('Published topic '+packet.topic);
+      log.info('Published payload '+packet.payload);
+    }
   }
-  //if(true){ //this could be improved
-  var batmacid=topic.substring(4,21);
-  //console.log('Mac id publsihed '+batmacid);
-// console.log("Macid check is "+regex.test(batmacid));
-  var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
-  if(regex.test(batmacid)){ //check if valid macid there
+  catch(error)
+  {
+    log.error("Something happened bad when published message was parsed: ", error)
+  }
 
-    var isbattery=topic.substring(22,topic.length);
-    var batmac  = {macid: batmacid};
-    if(isbattery=='battery')
+  try
+  {
+    if(topic=='register')
     {
-      //console.log("I am a battery");
+      log.info("Hell Yeah, Device up for registration");
       var msg=packet.payload;
       var dataout=String(msg);
       var msgarray=dataout.split(",");//getting strings
-      var type=msgarray[0];//type of esp i.e., relay,, single valve, multiple valve, no of switches
-      var batP=msgarray[1];//primary battery
-      var batS=msgarray[2];//secondary battery
-      //add sensor capabilty here in future
-     // msg=Integer.parseInt(msg);
-      //console.log(msg);
+      var devMacid = msgarray[0];
+      var type=msgarray[1];//type of esp i.e., relay,, single valve, multiple valve, no of switches
+      var batP=msgarray[2];//primary battery
+      var batS=msgarray[3];//secondary battery
       log.info('Device type is of ',type);//new switches insert goes here
-      newSwitches(batmacid,type, batP, batS);//goes to the function and do the necessary
-      var count=0;
-            if(batP!=0){
-              connection.query('SELECT field1 from feeds where device_id=\''+batmacid+'\' ORDER BY id DESC LIMIT 1', function(err, rows, fields) {
-                if (!err){
-                  if(rows.length>0){//check if the macid was present already before
-                      //console.log('The solution is: ', rows[rows.length-1]['packet_id']);
-                      count=parseInt(rows[0]['field1']); //storing last packet id in 
-                     // console.log('count is '+count);
-                      count=count+1;
-                     // console.log('count is '+count);
-                      if(parseInt(batS)!=0)//check if secondary battery is absent
-                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count)+'\',\''+batP+'\',\''+batS+'\')';
-                      else
-                        var batquery='INSERT INTO feeds(device_id, field1, field2) VALUES (\''+batmac.macid+'\',\''+(count)+'\',\''+batP+'\')';
-                    }
-                  else{
-                      if(parseInt(batS)!=0)//check if secondary battery is absent
-                        var batquery='INSERT INTO feeds(device_id, field1, field2, field3) VALUES (\''+batmac.macid+'\',\''+(count)+'\',\''+batP+'\',\''+batS+'\')';
-                      else
-                        var batquery='INSERT INTO feeds VALUES(device_id, field1, field2) (\''+batmac.macid+'\',\''+(count)+'\',\''+batP+'\')';
-                    }
-                    connection.query(batquery, function(err, rows, fields) { //insert into the feed table
-                    if (err)
-                      log.error("MYSQL ERRORRRRRR "+err);
-                    else{
-                      log.info('Primary Battery status inserted for device '+batmacid+' with voltage '+batP);
-                      if(parseInt(batS)!=0)
-                        log.info('Secondary Battery status inserted for device '+batmacid+' with voltage '+batS);
-                      var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-                      mqttpub(mqttclient,batmacid,0,3); //sending hibernate signal, replacing 2 by 3
-                      log.info('Published 3 to '+batmacid);
-                      mqttclient.end();
-                      /*findChannel(batmacid, function(channel_Id){//updating the thingspeak feed
-                          TSclient.updateChannel(channel_Id, { "field1":parseInt(batP),"field2":parseInt(batS),"field3":(count+1)}, function(err, resp) {
-                          if (!err && resp > 0) {
-                              log.info('Thingspeak feed update successfully for channel id '+channel_Id);
-                          }
-                          });
-                      });*/
-                    }
-                    });
-                }
-                else
-                  log.error('Error while performing Query');
-              });
-              var jsonS={
-                     "deviceId":batmacid,
-                     "action"  :"battery",
-                     "type"    :type,
-                     "batP"    :batP,
-                     "batS"    :batS
-               };
-               sendAll(jsonS);//sending  battery value to the client website
-           }
-          
-    }
-
+      newSwitches(devMacid,type, batP, batS);//goes to the function and do the necessary entries of switches into the table
+    }  
   }
-     
+  catch(error)
+  {
+    log.error("Something happened bad when published message was being split: ", error)
+  }
   
 });
  
@@ -913,31 +842,28 @@ function deviceStatus(row, callback){
 *function: newSwitches(macId,type)
 *input: takes device_id and type is the signature of the device, 1 valve, 2 valve, and nth valve
 *output; insert new switches if there
-*logic: check if there is any previous entry of the deivce in swiches table
+*logic: check if there is any previous entry of the device in switches table
 *
 */
-function newSwitches(macId,type,batP, batS){
+function newSwitches(macId,type){
   var check='SELECT EXISTS(SELECT * FROM switches WHERE deviceId=\''+macId+'\') as find';
-      connection.query(check, function(err, rows, fields) {
-      //console.log('Inside client connected '+val);
-      
+      connection.query(check, function(err, rows, fields) {      
         if (err) 
-        log.error("MYSQL ERROR "+err);
+        log.error("MYSQL ERROR during checking of device entry under newswitches method: "+err);
         else{
             var find=rows[0]['find'];
-           // console.log('Inside client connected '+find);
             var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
-            //console.log('Mac id is valid? '+regex.test(post.macid));
-            if(find==0){ //check device is the new one, find=0 means new device found, no previous entry in the table
+            if(find==0)
+            { //check device is the new one, find=0 means new device found, no previous entry in the table
               if(regex.test(macId))//check if the client id is the macid
               { //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
-                if(type==1)
+                if(type==1)// if the device has only one switch, assume it will be powered by batteries, primary and secondary
                   var devdis='UPDATE devices SET switches='+type+', field1=\'packetId\', field2=\'Pbattery\', field3=\'SBattery\' where deviceId=\''+macId+'\'';
                 else if(type>1)
                   var devdis='UPDATE devices SET switches='+type+' where deviceId=\''+macId+'\'';//No battery needed for relay or switches>1
                 connection.query(devdis, function(err, rows, fields) { //insert into the table 
                   if (err) 
-                    log.error("MYSQL ERROR "+err);
+                    log.error("MYSQL ERROR during updating of device information in devices table: "+err);
                   else{
                     log.info('Device type updated for '+macId+' into device table, type '+type);
                       var jsonS={
@@ -945,14 +871,14 @@ function newSwitches(macId,type,batP, batS){
                            "data"  :"Device type updated for "+macId+" into device table, type "+type
                       };
                       sendAll(jsonS);//sending button status to all device
-                    if(type==1){//for thingspeak feed
-                      var thingspeakchannelrow={
-                        'api_key' : env.apiKey,
-                        'name'    : macId,
-                        'field1'  :'PbatValue',
-                        'field2'  :'SbatValue',
-                        'field3'  :'packetID'
-                      }
+                    // if(type==1){//for thingspeak feed
+                    //   var thingspeakchannelrow={
+                    //     'api_key' : env.apiKey,
+                    //     'name'    : macId,
+                    //     'field1'  :'PbatValue',
+                    //     'field2'  :'SbatValue',
+                    //     'field3'  :'packetID'
+                    //   }
                       /*TSclient.createChannel(1, thingspeakchannelrow, function(err) {
                         if (!err) {//channel creation done
                             log.info('New channel created for new Valve: '+macId);
@@ -968,7 +894,7 @@ function newSwitches(macId,type,batP, batS){
                           console.log(err)
                         }
                       });*/
-                      var devdis='INSERT INTO deviceNotif(deviceId, field1, field2) VALUES (\''+macId+'\',0,0)'//insert into deviceNotif table
+                     /* var devdis='INSERT INTO deviceNotif(deviceId, field1, field2) VALUES (\''+macId+'\',0,0)'//insert into deviceNotif table, 0 and 0 coz it doesn't need battery
                       connection.query(devdis, function(err, rows, fields) { //insert into the table 
                         if (err) 
                           log.error("MYSQL ERROR Entry in deviceNotif "+err);
@@ -980,13 +906,13 @@ function newSwitches(macId,type,batP, batS){
                           };
                           sendAll(jsonS);//sending button status to all device
                         }
-                      });
+                      });*/
                     }
                     
                   }
                 });
                 // for creating new switches
-                for(var j=1;j<=type;j++){
+                for(var j=1;j<=type;j++){// this can be improved, instead of repeatedly calling, create multi sql query and fire in a single query
                   insertSwitch(macId,j);
                 }
               }//closing macid check if clause

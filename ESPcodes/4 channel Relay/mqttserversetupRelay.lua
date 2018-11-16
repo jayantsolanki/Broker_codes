@@ -30,7 +30,7 @@ m:on('message', function(conn, topic, data)
     elseif data == "6" then 
       stopSwitch4()
     elseif data == "R" then   
-      payload='4,'..tostring(0)..','..tostring(0)
+      payload=macid..','..'4,'..tostring(0)..','..tostring(0)
       m:publish('register',payload,0,0, function(conn) end)
       print("Device Information sent")  
   --to give the user the battery status 
