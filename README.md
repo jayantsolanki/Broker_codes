@@ -145,3 +145,8 @@ directory=/var/www/thingspeak
     - sudo supervisorctl tail -f parrot-sensor |bunyan -L
     - or
     - tail -f /home/jayant/brokercodes/log/mosca-mysql-rpi-server.out |bunyan -L
+
+***
+## License
+***
+This project is open-sourced under [MIT License](http://opensource.org/licenses/MIT)
