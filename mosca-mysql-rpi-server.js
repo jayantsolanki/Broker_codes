@@ -240,12 +240,14 @@ server.on('published', function(packet) {
     var msg=packet.payload;
     var dataout=String(msg);
     var msgarray=dataout.split(",");//getting strings
-    var type=msgarray[0];//type of esp i.e., relay,, single valve, multiple valve, no of switches
-    var batP=msgarray[1];//primary battery
-    var batS=msgarray[2];//secondary battery
+    var devMacid = msgarray[0];
+    var type=msgarray[1];//type of esp i.e., relay,, single valve, multiple valve, no of switches
+    var batP=msgarray[2];//primary battery
+    var batS=msgarray[3];//secondary battery
     log.info('Device type is of ',type);//new switches insert goes here
     // newSwitches(batmacid,type, batP, batS);//goes to the function and do the necessary
     log.info("Device mac id is ",packet)
+    log.info("Device is ", devMacid);
   }
   //if(true){ //this could be improved
   var batmacid=topic.substring(4,21);
