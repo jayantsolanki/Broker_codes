@@ -1,12 +1,12 @@
 var mosca = require('mosca');
 var env = require('./settings');//importing settings file, environment variables
 /**************thingSpeak client**************/
-var ThingSpeakClient = require('thingspeakclient');
-var TSclient = new ThingSpeakClient({
+//var ThingSpeakClient = require('thingspeakclient');
+/*var TSclient = new ThingSpeakClient({
   server:'http://10.129.139.139:3000',
   updateTimeout:20000
 });
-
+*/
 /***************Adding websocket feature*******/
 var uuid = require('uuid');
 var WebSocketServer = require('ws').Server,
@@ -73,21 +73,21 @@ var ascoltatore = {
 var localdb_config={
   host     : env.localhost,
   user     : env.user,
-  password : env.password1,
+  password : env.password,
   socketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database
 }
-var thingspeak_config={ //for thingspeak
-  host     : env.mhost2,
-  user     : env.user,
-  password : env.password2,
-  socketPath: '/var/run/mysqld/mysqld.sock',
-  database : env.database2//thingspeak
-}
+//var thingspeak_config={ //for thingspeak
+//  host     : env.mhost2,
+//  user     : env.user,
+//  password : env.password2,
+//  socketPath: '/var/run/mysqld/mysqld.sock',
+// database : env.database2//thingspeak
+//}
 var connection = mysql.createConnection(localdb_config);
-var thingspeak = mysql.createConnection(thingspeak_config);
+//var thingspeak = mysql.createConnection(thingspeak_config);
 connection.connect();//general
-thingspeak.connect();//thingspeak
+//thingspeak.connect();//thingspeak
 //configuration ended
  
 var settings = {
@@ -287,13 +287,13 @@ server.on('published', function(packet) {
                       mqttpub(mqttclient,batmacid,0,3); //sending hibernate signal, replacing 2 by 3
                       log.info('Published 3 to '+batmacid);
                       mqttclient.end();
-                      findChannel(batmacid, function(channel_Id){//updating the thingspeak feed
+                      /*findChannel(batmacid, function(channel_Id){//updating the thingspeak feed
                           TSclient.updateChannel(channel_Id, { "field1":parseInt(batP),"field2":parseInt(batS),"field3":(count+1)}, function(err, resp) {
                           if (!err && resp > 0) {
                               log.info('Thingspeak feed update successfully for channel id '+channel_Id);
                           }
                           });
-                      });
+                      });*/
                     }
                     });
                 }
@@ -326,7 +326,7 @@ function setup() {
  // server.authorizeSubscribe = authorizeSubscribe;
  
   //var currenttime=date.getTime()
-	attachChannels();//attaching the chaneels with their API write keys
+	//attachChannels();//attaching the chaneels with their API write keys
   var tasks = "select * from tasks where active!=3"; //only non disabled task
   var minutes = 1, the_interval = 10000; //set time here, every ten seconds below code is repeated
   var date = new Date();
@@ -823,7 +823,7 @@ function thingspeakDisconnect() {
 
 
 //check if connection has fallen then to this, error caching
-thingspeak.on('error', function(err) {
+/*thingspeak.on('error', function(err) {
     log.error('thingspeak db error', err);
     if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
       thingspeakDisconnect();                         // lost due to either server restart, or a
@@ -831,7 +831,7 @@ thingspeak.on('error', function(err) {
       throw err;                                  // server variable configures this)
 }
 });
-
+*/
 /******************************
 *function: localdbDisconnect()
 *input: none
@@ -936,7 +936,7 @@ function newSwitches(macId,type,batP, batS){
                         'field2'  :'SbatValue',
                         'field3'  :'packetID'
                       }
-                      TSclient.createChannel(1, thingspeakchannelrow, function(err) {
+                      /*TSclient.createChannel(1, thingspeakchannelrow, function(err) {
                         if (!err) {//channel creation done
                             log.info('New channel created for new Valve: '+macId);
                             var jsonS={
@@ -950,7 +950,7 @@ function newSwitches(macId,type,batP, batS){
                         {
                           console.log(err)
                         }
-                      });
+                      });*/
                       var devdis='INSERT INTO deviceNotif(deviceId, field1, field2) VALUES (\''+macId+'\',0,0)'//insert into deviceNotif table
                       connection.query(devdis, function(err, rows, fields) { //insert into the table 
                         if (err) 
