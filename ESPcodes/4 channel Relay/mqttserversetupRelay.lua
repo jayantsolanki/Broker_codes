@@ -7,39 +7,43 @@ m = mqtt.Client(wifi.sta.getmac(), 10)   --10sec keep alive
 m:on('offline',function(con) c = false end) 
 -- on publish message receive event print the topic and data and do the task
 m:on('message', function(conn, topic, data)
-  print(topic .. ':')
-  if data ~= nil then
-    print(data)
-  end 
--- Use the data to turn the valve ON or OFF 
-  
-  if data == "1" then 
-    startSwitch1()
-  elseif data == "3" then 
-    startSwitch2()
-  elseif data == "5" then 
-    startSwitch3()
-  elseif data == "7" then 
-    startSwitch4()
-  elseif data == "0" then 
-    stopSwitch1()
-  elseif data == "4" then 
-    stopSwitch2()
-  elseif data == "6" then 
-    stopSwitch3()
-  elseif data == "8" then 
-    stopSwitch4()
---to give the user the battery status 
-  elseif data == "2" then   
-    -- paylaod format identifier,bat3,bat6
-    --payload='1,'..tostring(bat3)..','..tostring(adc.read(0))
-    payload='4,'..tostring(0)..','..tostring(0)
-    m:publish('esp/'..macid..'/battery',payload,0,0, function(conn) end)--print('battery status sent') end)
-    print("Battery status sent ")  
-    --tweaked for pin2
-    -- gpio.write(pin4,gpio.LOW)
+    print(topic .. ':')
+    if data ~= nil then
+      print(data)
+    end 
+  -- Use the data to turn the valve ON or OFF 
     
-   else
+    if data == "1" then 
+      startSwitch1()
+    elseif data == "3" then 
+      startSwitch2()
+    elseif data == "5" then 
+      startSwitch3()
+    elseif data == "7" then 
+      startSwitch4()
+    elseif data == "0" then 
+      stopSwitch1()
+    elseif data == "2" then 
+      stopSwitch2()
+    elseif data == "4" then 
+      stopSwitch3()
+    elseif data == "6" then 
+      stopSwitch4()
+    elseif data == "R" then   
+      payload='4,'..tostring(0)..','..tostring(0)
+      m:publish('register',payload,0,0, function(conn) end)
+      print("Device Information sent")  
+  --to give the user the battery status 
+    elseif data == "B" then   
+      -- paylaod format identifier,bat3,bat6
+      --payload='1,'..tostring(bat3)..','..tostring(adc.read(0))
+      payload='4,'..tostring(0)..','..tostring(0)
+      m:publish('esp/'..macid..'/battery',payload,0,0, function(conn) end)--print('battery status sent') end)
+      print("Battery status sent ")  
+      --tweaked for pin2
+      -- gpio.write(pin4,gpio.LOW)
+      
+    else
   end
 end)
 

@@ -150,7 +150,7 @@ server.on('clientConnected', function(client) {
                     log.info('New Device found, adding '+post.macid+' into device table');
                     log.info('Requesting for more data from device '+post.macid);
                     var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-                    mqttpub(mqttclient,post.macid,0,2);//calling mqttpub for publishing value 2 to all macids
+                    mqttpub(mqttclient,post.macid,0,'R');//calling mqttpub for publishing value R to concerned Macid
                     mqttclient.end();
                     var jsonS={
                          "deviceId":post.macid,
@@ -232,6 +232,21 @@ server.on('published', function(packet) {
     log.info('Published topic '+packet.topic);
     log.info('Published payload '+packet.payload);
   }
+
+
+  if(topic=='register')
+  {
+    log.info("Hell Yeah, Device up for registration");
+    var msg=packet.payload;
+    var dataout=String(msg);
+    var msgarray=dataout.split(",");//getting strings
+    var type=msgarray[0];//type of esp i.e., relay,, single valve, multiple valve, no of switches
+    var batP=msgarray[1];//primary battery
+    var batS=msgarray[2];//secondary battery
+    log.info('Device type is of ',type);//new switches insert goes here
+    // newSwitches(batmacid,type, batP, batS);//goes to the function and do the necessary
+    log.info("Device mac id is ",packet)
+  }
   //if(true){ //this could be improved
   var batmacid=topic.substring(4,21);
   //console.log('Mac id publsihed '+batmacid);
@@ -253,7 +268,7 @@ server.on('published', function(packet) {
       //add sensor capabilty here in future
      // msg=Integer.parseInt(msg);
       //console.log(msg);
-      log.info('Device type is of ',type);//new swiches insert goes here
+      log.info('Device type is of ',type);//new switches insert goes here
       newSwitches(batmacid,type, batP, batS);//goes to the function and do the necessary
       var count=0;
             if(batP!=0){
