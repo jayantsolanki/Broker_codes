@@ -14,44 +14,69 @@ m:on('message', function(conn, topic, data)
 -- Use the data to turn the valve ON or OFF 
   
   if data == "1" then 
-    startValve() 
+    startSwitch1()
+  elseif data == "3" then 
+    startSwitch2()
+  elseif data == "5" then 
+    startSwitch3()
+  elseif data == "7" then 
+    startSwitch4()
   elseif data == "0" then 
-    stopValve()
+    stopSwitch1()
+  elseif data == "4" then 
+    stopSwitch2()
+  elseif data == "6" then 
+    stopSwitch3()
+  elseif data == "8" then 
+    stopSwitch4()
 --to give the user the battery status 
   elseif data == "2" then   
     -- paylaod format identifier,bat3,bat6
     --payload='1,'..tostring(bat3)..','..tostring(adc.read(0))
-    payload='2,'..tostring(0)..','..tostring(0)
+    payload='1,'..tostring(0)..','..tostring(0)
     m:publish('esp/'..macid..'/battery',payload,0,0, function(conn) end)--print('battery status sent') end)
     print("Battery status sent ")  
     --tweaked for pin2
-    gpio.write(pin4,gpio.LOW)
-  elseif tonumber(data)>10  then 
-    sleepTime = tonumber(data)*1000000*60
-    print("Sleep time set to ".. tostring(sleepTime))    
-    node.dsleep(sleepTime)
-  elseif data=="3" then 
-    --node.dsleep(sleepTime)
-    gpio.write(pin4,gpio.HIGH)
+    -- gpio.write(pin4,gpio.LOW)
     
    else
   end
 end)
 
-function startValve()
-    gpio.write(pin12,gpio.HIGH)
+function startSwitch1()
+    -- gpio.write(pin12,gpio.HIGH)
     gpio.write(pin14,gpio.LOW)
-    doValve()
+    -- doValve()
 end
-function stopValve()
-
+function startSwitch2()
+    -- gpio.write(pin12,gpio.HIGH)
     gpio.write(pin12,gpio.LOW)
+    -- doValve()
+end
+function startSwitch3()
+    -- gpio.write(pin12,gpio.HIGH)
+    gpio.write(pin13,gpio.LOW)
+    -- doValve()
+end
+function startSwitch4()
+    -- gpio.write(pin12,gpio.HIGH)
+    gpio.write(pin4,gpio.LOW)
+    -- doValve()
+end
+function stopSwitch1()
     gpio.write(pin14,gpio.HIGH)
-    
-    doValve()
 end
-function doValve()
-  gpio.write(pin13,gpio.HIGH) 
-  tmr.delay(1000000)
-  gpio.write(pin13,gpio.LOW)
+function stopSwitch2()
+    gpio.write(pin12,gpio.HIGH)
 end
+function stopSwitch3()
+    gpio.write(pin13,gpio.HIGH)
+end
+function stopSwitch4()
+    gpio.write(pin4,gpio.HIGH)
+end
+-- function doValve()
+--   gpio.write(pin13,gpio.HIGH) 
+--   tmr.delay(1000000)
+--   gpio.write(pin13,gpio.LOW)
+-- end

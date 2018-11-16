@@ -14,40 +14,45 @@ m:on('message', function(conn, topic, data)
 -- Use the data to turn the valve ON or OFF 
   
   if data == "1" then 
-    startValve() 
+    startSwitch1()
   elseif data == "0" then 
-    stopValve()
+    stopSwitch1()
+  elseif data == "3" then 
+    startSwitch2()
+  elseif data == "4" then 
+    stopSwitch2()
 --to give the user the battery status 
   elseif data == "2" then   
     -- paylaod format identifier,bat3,bat6
-    payload='1,'..tostring(bat3)..','..tostring(adc.read(0))
+    --payload='1,'..tostring(bat3)..','..tostring(adc.read(0))
+    payload='2,'..tostring(0)..','..tostring(0)
     m:publish('esp/'..macid..'/battery',payload,0,0, function(conn) end)--print('battery status sent') end)
     print("Battery status sent ")  
-  elseif tonumber(data)>10  then 
-    sleepTime = tonumber(data)*1000000*60
-    print("Sleep time set to ".. tostring(sleepTime))    
-    node.dsleep(sleepTime)
-  elseif data=="3" then 
-    node.dsleep(sleepTime)
+    --tweaked for pin2
+    -- gpio.write(pin4,gpio.LOW)
     
    else
   end
 end)
 
-function startValve()
-    gpio.write(pin12,gpio.HIGH)
-    gpio.write(pin14,gpio.LOW)
-    doValve()
+function startSwitch1()
+    -- gpio.write(pin12,gpio.HIGH)
+    gpio.write(pin4,gpio.LOW)
+    -- doValve()
 end
-function stopValve()
-
-    gpio.write(pin12,gpio.LOW)
-    gpio.write(pin14,gpio.HIGH)
-    
-    doValve()
+function startSwitch2()
+    -- gpio.write(pin12,gpio.HIGH)
+    gpio.write(pin2,gpio.LOW)
+    -- doValve()
 end
-function doValve()
-  gpio.write(pin13,gpio.HIGH) 
-  tmr.delay(1000000)
-  gpio.write(pin13,gpio.LOW)
+function stopSwitch1()
+    gpio.write(pin4,gpio.HIGH)
 end
+function stopSwitch2()
+    gpio.write(pin2,gpio.HIGH)
+end
+-- function doValve()
+--   gpio.write(pin13,gpio.HIGH) 
+--   tmr.delay(1000000)
+--   gpio.write(pin13,gpio.LOW)
+-- end
