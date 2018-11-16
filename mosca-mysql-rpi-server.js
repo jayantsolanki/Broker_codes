@@ -874,9 +874,7 @@ function newSwitches(macId,type){
                 }
             });
             // for creating new switches
-            for(var j=1;j<=type;j++){// this can be improved, instead of repeatedly calling, create multi sql query and fire in a single query
-              insertSwitch1(macId,j);
-            }
+            insertSwitch(macId,type);
           }
         }
     });
@@ -888,35 +886,23 @@ function newSwitches(macId,type){
 *output; creates their respective switches
 *
 */
-function insertSwitch(macId, switchId){
-    var switches='INSERT INTO switches (deviceId, switchId) VALUES(\''+macId+'\', '+switchId+')';
-    connection.query(switches, function(err, drows, fields) { //Insert into switches table
-      if (err)
-        log.error("Error in creating new switches "+err);
-      else{
-        log.info('Creating entry for DeviceId '+macId+' SwitchId '+switchId);
-        var jsonS={
-             "action":'device',
-             "data"  :'Creating entry for DeviceId '+macId+' SwitchId '+switchId
-        };
-        sendAll(jsonS);//sending button status to all device
-        }
-    });
-}
-function insertSwitch1(macId, count){
-    var switches='INSERT INTO switches (deviceId, switchId)';
-    for(var j=1;j<=type;j++)
+function insertSwitch(macId, count){
+    var switches='INSERT INTO switches (deviceId, switchId) VALUES';
+    for(var j=1;j<=count;j++)
     {
-      switches = switches + ' VALUES(\''+macId+'\', '+j+')'
+      if(j<count)
+      	switches = switches + ' (\''+macId+'\', '+j+'),'
+      else
+	switches = switches + ' (\''+macId+'\', '+j+')'
     }
     connection.query(switches, function(err, drows, fields) { //Insert into switches table
       if (err)
         log.error("Error in creating new switches "+err);
       else{
-        log.info('Creating entry for DeviceId '+macId+' SwitchId '+switchId);
+        log.info('Creating entry for DeviceId '+macId+' Number of Switches '+count);
         var jsonS={
              "action":'device',
-             "data"  :'Creating entry for DeviceId '+macId+' SwitchId '+switchId
+             "data"  :'Creating entry for DeviceId '+macId+' Number of Switches: '+count
         };
         sendAll(jsonS);//sending button status to all device
         }
