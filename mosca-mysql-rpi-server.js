@@ -231,16 +231,11 @@ server.on('published', function(packet) {
   try
   {
     topic=topic.toString();
-    var jsonS={
-         "action":'mqtt payload',
-         "data":  String(packet.payload)
-    };
-    sendAll(jsonS);//sending button status to all device
-    if(regex1.test(packet) || packet.cmd=='publish'){// useless block
-      log.info('Client id is ',packet.cmd);
-      log.info('Published topic '+packet.topic);
-      log.info('Published payload '+packet.payload);
-    }
+    // var jsonS={
+    //      "action":'mqtt payload',
+    //      "data":  String(packet.payload)
+    // };
+    // sendAll(jsonS);//sending button status to all device
   }
   catch(error)
   {
@@ -256,11 +251,32 @@ server.on('published', function(packet) {
       var msgarray=dataout.split(",");//getting strings
       var devMacid = msgarray[0];
       var type=msgarray[1];//type of esp i.e., relay,, single valve, multiple valve, no of switches
-      var batP=msgarray[2];//primary battery
-      var batS=msgarray[3];//secondary battery
       log.info('New device, device type is of ',type);//new switches insert goes here
-      newSwitches(devMacid,type, batP, batS);//goes to the function and do the necessary entries of switches into the table
-    }  
+      var jsonS={
+         "action":'Publish:'+topic,
+         "data":  String(packet.payload)
+      };
+      sendAll(jsonS);//sending button status to all device
+      newSwitches(devMacid,type);//goes to the function and do the necessary entries of switches into the table
+    }
+    if(topic=='battery')
+    {
+      var msg=packet.payload;
+      var dataout=String(msg);
+      var msgarray=dataout.split(",");//getting strings
+      var devMacid = msgarray[0];
+      var type = msgarray[1]
+      var Pbat = msgarray[2]
+      var Sbat = msgarray[3]
+      var type=msgarray[1];//type of esp i.e., relay,, single valve, multiple valve, no of switches
+      log.info('Battery data received from device:',devMacid);//new switches insert goes here
+      var jsonS={
+         "action":'Publish:'+topic,
+         "data":  String(packet.payload)
+      };
+      sendAll(jsonS);//sending button status to all device
+      //add function for storing battery messages here
+    }    
   }
   catch(error)
   {
@@ -567,7 +583,7 @@ function battstatus(groupId)
       for (var j=0;j<rows.length;j++)//going through all the macid
       {
           log.info("Checking battery status for device "+rows[j].deviceId)
-          mqttpub(mqttclient,rows[j].deviceId,0,2);//calling mqttpub for publishing value 2 to all macids
+          mqttpub(mqttclient,rows[j].deviceId,0,'B');//calling mqttpub for publishing value B to all macids
           var jsonS={
                "action":'battery check',
                "data"  :"Checking battery status for device "+rows[j].deviceId
@@ -623,7 +639,7 @@ wss.on('connection', function(ws) {
       var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
       mqttpub(mqttclient,response.deviceId,response.switchId,response.payload);//code modified, added provision for the >1 switches per ESP
       mqttclient.end();
-      console.log('message received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
+      log.info('Action received ', response.deviceId, 'action ', response.payload, 'switchID ', response.switchId);
       var jsonS={
            "action":'switch',
            "data"  :"message received "+response.deviceId+" action "+response.payload+" switchID "+response.switchId

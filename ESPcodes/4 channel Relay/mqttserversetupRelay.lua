@@ -30,15 +30,15 @@ m:on('message', function(conn, topic, data)
     elseif data == "6" then 
       stopSwitch4()
     elseif data == "R" then   
-      payload=macid..','..'4,'..tostring(0)..','..tostring(0)
+      payload=macid..','..'4'
       m:publish('register',payload,0,0, function(conn) end)
       print("Device Information sent")  
   --to give the user the battery status 
     elseif data == "B" then   
       -- paylaod format identifier,bat3,bat6
       --payload='1,'..tostring(bat3)..','..tostring(adc.read(0))
-      payload='4,'..tostring(0)..','..tostring(0)
-      m:publish('esp/'..macid..'/battery',payload,0,0, function(conn) end)--print('battery status sent') end)
+      payload=macid..','..'4,'..tostring(0)..','..tostring(0)
+      m:publish('battery',payload,0,0, function(conn) end)--print('battery status sent') end)
       print("Battery status sent ")  
       --tweaked for pin2
       -- gpio.write(pin4,gpio.LOW)
