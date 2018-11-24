@@ -3,3 +3,5 @@ log
 log/*
 
 settings.js
+node_modules
+node_modules/
