@@ -125,7 +125,7 @@ var server = new mosca.Server(settings);
 //device discovery
 server.on('clientConnected', function(client) {
     var val=client.id;
-    var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
+    var regex = /^([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})$/;
     if(regex.test(val))//check if the client id is the macid
     {
       //{ //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
@@ -179,7 +179,19 @@ server.on('clientConnected', function(client) {
       });
     }
     else{
-      log.info("Unknown Device with non conforming ID connected ",val)
+	
+      if(val!='M-O-S-C-A')
+      {
+
+         var jsonS=
+        {
+           "deviceId":val,
+  	   "action": 'info',
+           "data":"Non-conforming macid for the device, not registered, "+val
+        };
+        sendAll(jsonS);//sending  online status to website}
+        log.info("Unknown Device with non conforming ID connected ",val)
+      }
     }
 });
 
@@ -227,7 +239,7 @@ server.on('clientDisconnected', function(client) {
 server.on('published', function(packet) {
   //var date = new Date();
   var topic=packet.topic; //get value of payload
-  var regex1 = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
+  var regex1 = /^([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})$/;
   try
   {
     topic=topic.toString();
@@ -868,7 +880,7 @@ function deviceStatus(row, callback){
 *
 */
 function newSwitches(macId,type){
-  var regex = /^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/;
+  var regex = /^([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})$/;
   if(regex.test(macId))//check if the client id is the macid
   { //(id, deviceId, name, description,type,switches,regionId, latitude,longitude,field1,field2,field3,field4,field5,field6, created_at, updated_at, elevation)
     var check='SELECT EXISTS(SELECT * FROM switches WHERE deviceId=\''+macId+'\') as find';
