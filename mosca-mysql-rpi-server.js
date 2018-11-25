@@ -190,7 +190,7 @@ server.on('clientConnected', function(client) {
                    "status":1
              };
              sendAll(jsonS);//sending  online status to website
-             Tclient.post('statuses/update', {status: post.macid+" device is back online"}, function(error, tweet, response) {
+             Tclient.post('statuses/update', {status: val+" device is back online"}, function(error, tweet, response) {
               if (!error) {
                 log.info('Reconnected status twitted');
               }
@@ -311,7 +311,7 @@ server.on('published', function(packet) {
           log.info('Registration information received');
         }
         else{
-          log.error('Tweet error: '+error);
+          log.error('Tweet error, new device registration: '+error);
         }
       });
     }
@@ -999,6 +999,9 @@ function insertSwitch(macId, count){
              "data"  :'Creating entry for DeviceId '+macId+' Number of Switches: '+count
         };
         sendAll(jsonS);//sending button status to all device
+        var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
+                  mqttpub(mqttclient,post.macid,0,'0');//calling mqttpub for publishing value 0 to concerned Macid
+                  mqttclient.end();
         }
     });
 }
