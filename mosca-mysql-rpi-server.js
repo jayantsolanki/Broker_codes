@@ -1000,8 +1000,8 @@ function insertSwitch(macId, count){
         };
         sendAll(jsonS);//sending button status to all device
         var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-                  mqttpub(mqttclient,post.macid,0,'0');//calling mqttpub for publishing value 0 to concerned Macid
-                  mqttclient.end();
+        mqttpub(mqttclient,macId,0,'0');//calling mqttpub for publishing value 0 to concerned Macid
+        mqttclient.end();
         }
     });
 }
