@@ -7,6 +7,14 @@ var env = require('./settings');//importing settings file, environment variables
   updateTimeout:20000
 });
 */
+/********twitter api**********/
+var Twitter = require('twitter');
+var Tclient = new Twitter({
+  consumer_key: env.consumer_key,
+  consumer_secret: env.consumer_secret,
+  access_token_key: env.access_token_key,
+  access_token_secret: env.access_token_secret
+});
 /***************Adding websocket feature*******/
 var uuid = require('uuid');
 var WebSocketServer = require('ws').Server,
@@ -155,6 +163,14 @@ server.on('clientConnected', function(client) {
                        "data"  :"new Device Found"
                   };
                   sendAll(jsonS);//sending button status to all Website users via websocket
+                  Tclient.post('statuses/update', {status: "New device found "+post.macid+", requested for more info from the device"}, function(error, tweet, response) {
+                    if (!error) {
+                      log.info('New Device twitted');
+                    }
+                    else{
+                      log.error('Tweet error: '+error);
+                    }
+                  });
                 }
               });
           }
@@ -174,6 +190,14 @@ server.on('clientConnected', function(client) {
                    "status":1
              };
              sendAll(jsonS);//sending  online status to website
+             Tclient.post('statuses/update', {status: post.macid+" device is back online"}, function(error, tweet, response) {
+              if (!error) {
+                log.info('Reconnected status twitted');
+              }
+              else{
+                log.error('Tweet error: '+error);
+              }
+            });
           }
       }
       });
@@ -198,20 +222,32 @@ server.on('clientConnected', function(client) {
 // fired when a client or device disconnects
 server.on('clientDisconnected', function(client) {
   var val=client.id;
-  log.info('Device Disconnected', client.id);
-  var offlineq='INSERT INTO deviceStatus VALUES (DEFAULT,\''+client.id.toString()+'\',0, DEFAULT)';
-  connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
-    if (err) 
-      log.error("MYSQL ERROR "+err);
-    //else
-      //console.log('Device '+client.id.toString()+' marked offline '+date);
+  var regex = /^([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})$/;
+  if(regex.test(val))//check if the client id is the macid
+  {
+    log.info('Device Disconnected', client.id);
+    var offlineq='INSERT INTO deviceStatus VALUES (DEFAULT,\''+client.id.toString()+'\',0, DEFAULT)';
+    connection.query(offlineq, function(err, rows, fields) { //updating device status as online if it reconnects
+      if (err) 
+        log.error("MYSQL ERROR "+err);
+      //else
+        //console.log('Device '+client.id.toString()+' marked offline '+date);
 
-  });
-  var jsonS={
-       "deviceId":val,
-       "status":0
-  };
-  sendAll(jsonS);//sending  offline status to website users
+    });
+    var jsonS={
+        "deviceId":val,
+        "status":0
+    };
+    sendAll(jsonS);//sending  offline status to website users
+    Tclient.post('statuses/update', {status: val+" device went offline"}, function(error, tweet, response) {
+      if (!error) {
+        log.info('Disconnected status twitted');
+      }
+      else{
+        log.error('Tweet error: '+error);
+      }
+    });
+  }
 });
 
 // fired when a client unsubscribes
@@ -270,6 +306,14 @@ server.on('published', function(packet) {
       };
       sendAll(jsonS);//sending button status to all device
       newSwitches(devMacid,type);//goes to the function and do the necessary entries of switches into the table
+      Tclient.post('statuses/update', {status: devMacid+" device sent more info for registration, device has  "+type+" switches. Device is available for User now."}, function(error, tweet, response) {
+        if (!error) {
+          log.info('Registration information received');
+        }
+        else{
+          log.error('Tweet error: '+error);
+        }
+      });
     }
     if(topic=='battery')
     {
@@ -397,12 +441,20 @@ function setup() {
                   {
                    // console.log(currenttime);
                       var mqttclient  = mqtt.connect(mqttaddress,{encoding:'utf8', clientId: 'M-O-S-C-A'});
-                      log.info("Scheduled task started for switching on the Valves");
+                      log.info("Scheduled task started for switching on the Devices");
                       var jsonS={
                            "action":'schedule',
-                           "data"  :"Scheduled task started for switching on the Valves"
+                           "data"  :"Scheduled task started for switching on the Devices"
                       };
                       sendAll(jsonS);//sending button status to all device
+                      Tclient.post('statuses/update', {status: "Scheduled task started for Switching the Devices on group id "+groupId }, function(error, tweet, response) {
+                        if (!error) {
+                          log.info('Scheduled task started for switching on the Devices, info twitted');
+                        }
+                        else{
+                          log.error('Tweet error: '+error);
+                        }
+                      });
 
                       for (var j=0;j<devs.length;j++)//
                       {
@@ -478,6 +530,14 @@ function setup() {
                          "data"  :"Scheduled task started for switching off the valves"
                     };
                     sendAll(jsonS);//sending button status to all device
+                    Tclient.post('statuses/update', {status: "Scheduled task stopped for Switching the Devices on group id "+groupId }, function(error, tweet, response) {
+                      if (!error) {
+                        log.info('Scheduled task stopped for switching on the Devices, info twitted');
+                      }
+                      else{
+                        log.error('Tweet error: '+error);
+                      }
+                    });
                    for (var j=0;j<devs.length;j++)// publishing the message
                    {
                         log.info("Switched off "+devs[j].deviceId+" SwitchId "+devs[j].switchId)
