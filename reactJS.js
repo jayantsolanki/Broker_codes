@@ -59,7 +59,7 @@ var mysql      = require('mysql');
 var localdb_config={
   host     : env.localhost,
   user     : env.user,
-  password : env.password1,
+  password : env.password,
   socketPath: '/var/run/mysqld/mysqld.sock',
   database : env.database
 }
@@ -74,7 +74,7 @@ setInterval(function() {
     var time=new Date();
     if(server==0){//send message to Twitter
       log.error("Mosca Server Outage");
-      Tclient.post('statuses/update', {status: "CRITICAL: Mosca server went Offline, please contact Admin, time "+time}, function(error, tweet, response) {
+      Tclient.post('statuses/update', {status: "CRITICAL: Mosca server went Offline, please contact Jayant, time "+time}, function(error, tweet, response) {
         if (!error) {
           console.log('Mosca Connection breakage Tweet posted');
           
@@ -705,7 +705,7 @@ function checkSchedule(groupId, check){//actionId 4
 
 /**************************************Websocket con*********************************/
 function wsConnect() {//creating a websocket connection to the mosca-mysql-server.js for transfering the sensor value to the latter script
-    ws = new WebSocket("ws://10.129.139.139:8180");
+    ws = new WebSocket("ws://"+env.localhost+":8180");
     ws.onopen = function() {
       log.info('connected to websocket server');
       if(server==1){

@@ -18,9 +18,9 @@ portNo:'/dev/pts/10',
 /******************/
 apiKey:'KE4UZ68QJIRP5P1L', //thingspeak account apikeyclear
 /*******Twitter API***********/
-consumer_key: '62hsTP2eGevPVfotZH1gFQ7qd ',
-consumer_secret: 'FXukqaE64fyktJRNKJcvZ3yzh8LkjCKnZ000IhCaNG9h5IUFqd ',
-access_token_key: '709042851791810560-IL2vHUSGcNwtiHJgLlClKGqHULVzrsO',
-access_token_secret: 'PMjqAkIWwX3hTd7JdVEsjr4c26EZCb5qu5AgzVY7nCWQL'
+consumer_key: 'IMdFxXvVw2B0VBiEeQVckAHPE',
+consumer_secret: '5ZBC7pTlRHXqvq0RFV9kuTxI2y5rUZwxVEk9GGxcdPCKmYjOxJ',
+access_token_key: '709042851791810560-T3CpmHu2xrs3J9qMo2UxJTNp4LnPfFP',
+access_token_secret: 'BpMEJxaVKilSogFsMRF31NxavLu8YdhoILGxafZdP2LMs'
 };
 
