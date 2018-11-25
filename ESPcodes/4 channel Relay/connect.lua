@@ -17,7 +17,7 @@ tmr.alarm(1, 1000, 1, function()
                         tries = tries + 1                      -- incrementing the number of tries 
                         dofile('mqttserversetupRelay.lua')                      --calling mqtt script 
 
-                        m:connect('192.168.1.73',1883, 0, 1, function(conn) 
+                        m:connect('iot.jayantsolanki.com',1883, 0, 1, function(conn) 
                                 tmr.stop(1)
                                 c = true    
                                 gpio.write(pin2,gpio.LOW)

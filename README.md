@@ -28,7 +28,32 @@ It basically
 * Checking the connectivity status of all the devices etc
 ***
 
-### Setup (For Raspberry Pi 3 Model B)
+### Setup (For Raspberry Pi 3 Model B or Google GCP Compute Engine)
+#### Edit settings.js
+```
+
+module.exports={
+/************Database mysql settings************/
+localhost:'localhost',
+user:'yourdb',
+password:'yourpassword#',
+database:'IOT',
+database2:'thingspeak_development',
+mhost2:"localhost",
+/***********mosca settings************/
+mhost:"10.142.0.2", //should be internal ip, not the localhost or 127.0.0.1, if you want the server to be globally accessible
+mport:1883,
+/***********mqtt address************/
+mqtt:'mqtt://10.142.0.2', // this is used for sending the mqtt data from server, so make sure this address is same as mhost
+/***************Serial Port*******************/
+portNo:'/dev/pts/10',
+/******************/
+apiKey:'thingspeakapikey' //thingspeak account apikeyclear
+};
+
+
+
+```
 <!--- Creating a bash script for running the serial-sensor code on the Raspberry Pi
 ```
 #!/bin/bash
