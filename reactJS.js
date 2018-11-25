@@ -5,10 +5,10 @@ var Logger = require('bunyan');
 /********twitter api**********/
 var Twitter = require('twitter');
 var Tclient = new Twitter({
-  consumer_key: 'A9osl28dnL5Sf8fHjLNVcVKNU',
-  consumer_secret: 'bngJZxKfvis9olg1ykQm2AHMdSxtkK6ofzOjoK34dxpALRPthy',
-  access_token_key: '709042851791810560-F1xGVbRq1WYnb1Lpy9P27rm5SGQfwzJ',
-  access_token_secret: 'INMW42NC4W7iU59DpubZZ6VEWsrGGznRSF8vQONkwI8p7'
+  consumer_key: env.consumer_key,
+  consumer_secret: env.consumer_secret,
+  access_token_key: env.access_token_key,
+  access_token_secret: env.access_token_secret
 });
 /****************************/
 /***************Adding websocket feature*******/

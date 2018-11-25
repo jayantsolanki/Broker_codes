@@ -15,6 +15,11 @@ mqtt:'mqtt://192.168.1.73',
 /***************Serial Port*******************/
 portNo:'/dev/pts/10',
 /******************/
-apiKey:'KE4UZ68QJIRP5P1L' //thingspeak account apikeyclear
+apiKey:'KE4UZ68QJIRP5P1L', //thingspeak account apikeyclear
+/*******Twitter API***********/
+consumer_key: '62hsTP2eGevPVfotZH1gFQ7qd ',
+consumer_secret: 'FXukqaE64fyktJRNKJcvZ3yzh8LkjCKnZ000IhCaNG9h5IUFqd ',
+access_token_key: '709042851791810560-IL2vHUSGcNwtiHJgLlClKGqHULVzrsO',
+access_token_secret: 'PMjqAkIWwX3hTd7JdVEsjr4c26EZCb5qu5AgzVY7nCWQL'
 };
 
