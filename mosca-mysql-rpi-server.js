@@ -163,7 +163,8 @@ server.on('clientConnected', function(client) {
                        "data"  :"new Device Found"
                   };
                   sendAll(jsonS);//sending button status to all Website users via websocket
-                  Tclient.post('statuses/update', {status: "New device found, requesting more info from the device "+post.macid}, function(error, tweet, response) {
+                  var time=new Date();
+                  Tclient.post('statuses/update', {status: "New device found, requesting more info from the device "+post.macid+ ", Requested time "+time}, function(error, tweet, response) {
                     if (!error) {
                       log.info('New Device twitted');
                     }
@@ -190,7 +191,8 @@ server.on('clientConnected', function(client) {
                    "status":1
              };
              sendAll(jsonS);//sending  online status to website
-             Tclient.post('statuses/update', {status: "Device went online "+val}, function(error, tweet, response) {
+             var time=new Date();
+             Tclient.post('statuses/update', {status: "Device went online "+val+" on "+time}, function(error, tweet, response) {
               if (!error) {
                 log.info('Reconnected status twitted');
               }
@@ -239,7 +241,8 @@ server.on('clientDisconnected', function(client) {
         "status":0
     };
     sendAll(jsonS);//sending  offline status to website users
-    Tclient.post('statuses/update', {status: "Device went offline "+val}, function(error, tweet, response) {
+    var time=new Date();
+    Tclient.post('statuses/update', {status: "Device went offline "+val+" on "+time}, function(error, tweet, response) {
       if (!error) {
         log.info('Disconnected status twitted');
       }
@@ -306,7 +309,8 @@ server.on('published', function(packet) {
       };
       sendAll(jsonS);//sending button status to all device
       newSwitches(devMacid,type);//goes to the function and do the necessary entries of switches into the table
-      Tclient.post('statuses/update', {status: "Device sent more information for registration "+devMacid}, function(error, tweet, response) {
+      var time=new Date();
+      Tclient.post('statuses/update', {status: "Device "+devMacid+" sent more information for registration, device type "+type+", sent at "+time}, function(error, tweet, response) {
         if (!error) {
           log.info('Registration information received');
         }
@@ -447,7 +451,12 @@ function setup() {
                            "data"  :"Scheduled task started for switching on the Devices"
                       };
                       sendAll(jsonS);//sending button status to all device
-                      Tclient.post('statuses/update', {status: "Scheduled task started for Switching the Devices on group id "+groupId }, function(error, tweet, response) {
+                      var Ttime=new Date();
+                      if(groupId!=null)
+                        msg = "Scheduled task started for Switching the Devices on group id "+groupId+" at "+Ttime
+                      else
+                        msg = "Manual task started for Switching the Devices on macid id "+macid+" at "+Ttime
+                      Tclient.post('statuses/update', {status: msg}, function(error, tweet, response) {
                         if (!error) {
                           log.info('Scheduled task started for switching on the Devices, info twitted');
                         }
@@ -530,7 +539,12 @@ function setup() {
                          "data"  :"Scheduled task started for switching off the valves"
                     };
                     sendAll(jsonS);//sending button status to all device
-                    Tclient.post('statuses/update', {status: "Scheduled task stopped for Switching the Devices on group id "+groupId }, function(error, tweet, response) {
+                    var Ttime=new Date();
+                      if(groupId!=null)
+                        msg = "Scheduled task stopped for Switching the Devices on group id "+groupId+" at "+Ttime
+                      else
+                        msg = "Manual task stopped for Switching the Devices on macid id "+macid+" at "+Ttime
+                    Tclient.post('statuses/update', {status: msg}, function(error, tweet, response) {
                       if (!error) {
                         log.info('Scheduled task stopped for switching on the Devices, info twitted');
                       }
