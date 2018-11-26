@@ -163,7 +163,7 @@ server.on('clientConnected', function(client) {
                        "data"  :"new Device Found"
                   };
                   sendAll(jsonS);//sending button status to all Website users via websocket
-                  Tclient.post('statuses/update', {status: "New device found "+post.macid+", requested for more info from the device"}, function(error, tweet, response) {
+                  Tclient.post('statuses/update', {status: "New device found, requesting more info from the device "+post.macid}, function(error, tweet, response) {
                     if (!error) {
                       log.info('New Device twitted');
                     }
@@ -190,7 +190,7 @@ server.on('clientConnected', function(client) {
                    "status":1
              };
              sendAll(jsonS);//sending  online status to website
-             Tclient.post('statuses/update', {status: val+" device is back online"}, function(error, tweet, response) {
+             Tclient.post('statuses/update', {status: "Device went online "+val}, function(error, tweet, response) {
               if (!error) {
                 log.info('Reconnected status twitted');
               }
@@ -239,7 +239,7 @@ server.on('clientDisconnected', function(client) {
         "status":0
     };
     sendAll(jsonS);//sending  offline status to website users
-    Tclient.post('statuses/update', {status: val+" device went offline"}, function(error, tweet, response) {
+    Tclient.post('statuses/update', {status: "Device went offline "+val}, function(error, tweet, response) {
       if (!error) {
         log.info('Disconnected status twitted');
       }
@@ -306,7 +306,7 @@ server.on('published', function(packet) {
       };
       sendAll(jsonS);//sending button status to all device
       newSwitches(devMacid,type);//goes to the function and do the necessary entries of switches into the table
-      Tclient.post('statuses/update', {status: devMacid+" device sent more info for registration, device has  "+type+" switches. Device is available for User now."}, function(error, tweet, response) {
+      Tclient.post('statuses/update', {status: "Device sent more information for registration "+devMacid}, function(error, tweet, response) {
         if (!error) {
           log.info('Registration information received');
         }
