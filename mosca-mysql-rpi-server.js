@@ -168,7 +168,7 @@ server.on('clientConnected', function(client) {
                       log.info('New Device twitted');
                     }
                     else{
-                      log.error('Tweet error: '+error);
+                      log.error('Tweet error: ',error);
                     }
                   });
                 }
@@ -195,7 +195,7 @@ server.on('clientConnected', function(client) {
                 log.info('Reconnected status twitted');
               }
               else{
-                log.error('Tweet error: '+error);
+                log.error('Tweet error: ',error);
               }
             });
           }
@@ -244,7 +244,7 @@ server.on('clientDisconnected', function(client) {
         log.info('Disconnected status twitted');
       }
       else{
-        log.error('Tweet error: '+error);
+        log.error('Tweet error: ',error);
       }
     });
   }
@@ -311,7 +311,7 @@ server.on('published', function(packet) {
           log.info('Registration information received');
         }
         else{
-          log.error('Tweet error, new device registration: '+error);
+          log.error('Tweet error, new device registration: ',error);
         }
       });
     }
@@ -452,7 +452,7 @@ function setup() {
                           log.info('Scheduled task started for switching on the Devices, info twitted');
                         }
                         else{
-                          log.error('Tweet error: '+error);
+                          log.error('Tweet error: ',error);
                         }
                       });
 
@@ -535,7 +535,7 @@ function setup() {
                         log.info('Scheduled task stopped for switching on the Devices, info twitted');
                       }
                       else{
-                        log.error('Tweet error: '+error);
+                        log.error('Tweet error: ',error);
                       }
                     });
                    for (var j=0;j<devs.length;j++)// publishing the message
